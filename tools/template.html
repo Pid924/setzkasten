@@ -67,6 +67,35 @@ h1 .s{color:var(--rubric)}
 .tile.ink.danger{animation:throb .9s infinite}
 .tile.sel.ink{background:linear-gradient(180deg,#f6d983,var(--brass));color:var(--ink)}
 .tile.hint{animation:hint 1s 2}
+.tile.heal{background:linear-gradient(180deg,#cfe6b8,#86b56a);color:#132a0c}
+.tile.heal::before{content:attr(data-h);position:absolute;left:4px;top:2px;font-size:calc(var(--ts)*.2);font-family:var(--f-body);font-weight:600;color:#1d4a12}
+.arena{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;margin-bottom:12px}
+.fighter{background:var(--groove);border:1px solid #4a3828;border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0}
+.foe{flex-direction:row;align-items:center;gap:10px}
+.foe svg{width:64px;height:64px;flex:none}
+.foe .fb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.fname{font-weight:600;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.fname .de{font-family:var(--f-display);font-size:20px;font-weight:600;display:block;line-height:1.05}
+.fname small{color:var(--muted);font-weight:400}
+.hpbar{height:10px;background:#120c08;border-radius:5px;overflow:hidden;border:1px solid #4a3828}
+.hpbar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .35s}
+.hpbar.enemy i{background:var(--rubric)}
+.hpt{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hpt b{color:var(--paper);font-weight:600}
+.atk{color:#ff8f7a}
+.hit{animation:hit .4s}
+@keyframes hit{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.flash{animation:flash .5s}
+@keyframes flash{30%{box-shadow:inset 0 0 0 3px var(--rubric),0 0 24px rgba(178,58,43,.8)}}
+.dmg{position:absolute;right:14px;top:-4px;font-family:var(--f-sort);font-weight:700;font-size:24px;color:#ffd27a;text-shadow:0 2px 0 #000;pointer-events:none;animation:pop 1s forwards}
+.fighter{position:relative}
+.modes{display:grid;gap:10px;margin-top:14px}
+.card .modes button{width:100%;margin:0;text-align:left;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);padding:10px 14px;display:block}
+.card .modes button b{display:block;font-family:var(--f-display);font-size:22px;font-weight:600}
+.card .modes button span{font-size:13.5px;font-weight:400;color:#3d372f}
+.card .modes button:hover{background:#fff8e6}
+.modebtn{min-height:36px;padding:5px 12px;font-size:13px}
+@media (max-width:420px){.arena{grid-template-columns:minmax(0,1fr)}}
 .tile:focus-visible{outline:3px solid var(--brass)}
 @keyframes throb{50%{box-shadow:0 3px 0 #000,0 0 14px 3px rgba(255,90,60,.6)}}
 @keyframes hint{50%{transform:translateY(-6px);box-shadow:0 0 0 3px var(--brass),0 8px 10px rgba(0,0,0,.4)}}
@@ -120,7 +149,7 @@ button small{font-weight:400;opacity:.75}
 .rules ul{padding-left:18px;margin:8px 0 0}
 .rules li{margin:3px 0}
 .chip{display:inline-block;padding:0 6px;border-radius:3px;font-family:var(--f-sort);font-weight:700;font-size:12px}
-.chip.r{background:#c9634f;color:#2a0d08}.chip.g{background:#d9a930;color:#3a2604}.chip.k{background:var(--ink);color:var(--paper)}
+.chip.h{background:#86b56a;color:#132a0c}.chip.r{background:#c9634f;color:#2a0d08}.chip.g{background:#d9a930;color:#3a2604}.chip.k{background:var(--ink);color:var(--paper)}
 
 /* overlay */
 .overlay{position:fixed;inset:0;background:rgba(15,10,6,.78);display:grid;place-items:center;z-index:20;padding:16px}
@@ -136,17 +165,21 @@ button small{font-weight:400;opacity:.75}
 <div class="wrap">
   <header>
     <h1>Setz<span class="s">k</span>asten</h1>
-    <div class="tag">ลากต่อตัวอักษรที่อยู่ติดกันให้เป็นคำภาษาเยอรมัน</div>
+    <div class="tag"><span id="modename">ลากต่อตัวอักษรที่อยู่ติดกันให้เป็นคำภาษาเยอรมัน</span> <button class="modebtn" id="modebtn">เปลี่ยนโหมด</button></div>
   </header>
   <div class="game">
     <section>
       <div class="stats">
         <div class="stat"><span>คะแนน</span><b id="score">0</b></div>
-        <div class="stat"><span>บท (Kapitel)</span><b id="chap">1</b></div>
-        <div class="stat"><span>ขนนก (ชีวิต)</span><b class="lives" id="lives">✒✒✒</b></div>
+        <div class="stat"><span id="chaplbl">บท (Kapitel)</span><b id="chap">1</b></div>
+        <div class="stat" id="livesbox"><span>ขนนก (ชีวิต)</span><b class="lives" id="lives">✒✒✒</b></div>
         <div class="stat"><span>สถิติสูงสุด</span><b id="best">0</b></div>
       </div>
-      <div class="progress" title="คะแนนในบทนี้"><i id="prog"></i></div>
+      <div class="progress" id="progbox" title="คะแนนในบทนี้"><i id="prog"></i></div>
+      <div class="arena" id="arena" hidden>
+        <div class="fighter" id="me"><div class="fname"><span class="de">Du</span>นักเรียงพิมพ์ (คุณ)</div><div class="hpbar"><i id="php"></i></div><div class="hpt">เลือด <b id="phpt">100 / 100</b></div></div>
+        <div class="fighter foe" id="foe"><svg id="foesvg" viewBox="0 0 64 64" aria-hidden="true"></svg><div class="fb"><div class="fname" id="fname"></div><div class="hpbar enemy"><i id="fhp"></i></div><div class="hpt">เลือด <b id="fhpt"></b> · <span class="atk" id="fatk"></span></div></div></div>
+      </div>
       <div class="tray"><div class="board" id="board" aria-label="กระดานตัวอักษร"></div></div>
       <div class="stick">
         <div class="word" id="wordbox"><span class="w" id="word">แตะหรือลากตัวอักษร</span><span class="pts" id="pts"></span></div>
@@ -173,6 +206,7 @@ button small{font-weight:400;opacity:.75}
           <li>คำ 5–6 ตัวจะได้ป้าย <span class="chip r">×2</span> สีแดงชาด คำ 7 ตัวขึ้นไปได้ป้าย <span class="chip g">×3</span> แผ่นทอง ใช้ในคำถัดไปเพื่อคูณคะแนน</li>
           <li>ระวัง <span class="chip k">หยดหมึก</span> ตัวเลขบนป้ายจะนับถอยหลังทุกตา ถ้าถึง 0 คุณเสียขนนก 1 อัน ใช้ป้ายนั้นในคำเพื่อกำจัดและได้โบนัส</li>
           <li>การสลับตัวอักษรนับเป็นหนึ่งตา ผ่านบทแล้วได้ขนนกคืน 1 อันและคำใบ้ครบ 3 ครั้ง</li>
+          <li><b>โหมดต่อสู้:</b> คะแนนของคำกลายเป็นดาเมจ (คะแนน ÷ 10) ศัตรูนับถอยหลังแล้วโจมตีกลับ ด่านยิ่งสูงยิ่งตีแรงและถี่ขึ้น ใช้ป้าย <span class="chip h">+HP</span> สีเขียวในคำเพื่อฟื้นเลือด และป้าย <span class="chip r">×2</span> เพื่อเพิ่มดาเมจ ชนะแล้วได้เลือดคืน 20 และคำใบ้ครบ 3 ครั้ง</li>
         </ul>
       </details>
     </aside>
@@ -200,13 +234,44 @@ let pool=[];for(const k in FREQ)for(let i=0;i<FREQ[k];i++)pool.push(k);
 const $=id=>document.getElementById(id);
 const boardEl=$('board');
 let grid,sel,score,chap,chapScore,lives,hints,uid,best=0,found,moves,busy=false;
-try{best=+localStorage.getItem('setzkasten-best')||0}catch(e){}
+let mode='classic',php=100,pmax=100,foe=null;
+function bestKey(){return mode==='battle'?'setzkasten-best-battle':'setzkasten-best';}
+function loadBest(){try{best=+localStorage.getItem(bestKey())||0}catch(e){best=0}}
+// enemies of the print shop; stats scale with the stage number
+const FOES=[
+ {de:'Tintenklecks',th:'หยดหมึกจอมซน',c:'#3b3f6b',f:'blob'},
+ {de:'Bücherlaus',th:'เหาหนังสือ',c:'#8a7a52',f:'bug'},
+ {de:'Druckfehlerteufel',th:'ปีศาจคำพิมพ์ผิด',c:'#a3352a',f:'horns'},
+ {de:'Papiertiger',th:'เสือกระดาษ',c:'#d8c49a',f:'stripes'},
+ {de:'Rostgolem',th:'โกเลมสนิม',c:'#9a5a32',f:'square'},
+ {de:'Schattenschrift',th:'อักษรเงา',c:'#4b4553',f:'ghost'},
+ {de:'Zensor',th:'ผู้ตรวจเซ็นเซอร์',c:'#55606b',f:'crown'},
+ {de:'Bleidrache',th:'มังกรตะกั่ว',c:'#6b7378',f:'horns'}];
+function foeStats(s){return{hp:50+35*(s-1)+6*(s-1)*(s-1),atk:5+3*(s-1),every:s<=2?3:s<=6?2:2};}
+function foeSVG(k){
+  const c=k.c,f=k.f;let body='',extra='';
+  if(f==='square')body='<rect x="12" y="14" width="40" height="40" rx="6" fill="'+c+'"/>';
+  else if(f==='ghost')body='<path d="M12 56V30a20 20 0 0 1 40 0v26l-7-5-6 5-7-5-6 5-7-5z" fill="'+c+'"/>';
+  else if(f==='bug')body='<ellipse cx="32" cy="36" rx="18" ry="16" fill="'+c+'"/><path d="M14 30l-8-4M14 38H5M14 46l-8 4M50 30l8-4M50 38h9M50 46l8 4" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>';
+  else body='<path d="M32 10c14 0 22 10 22 24 0 14-9 22-22 22S10 48 10 34c0-6 3-9 7-10-1-8 6-14 15-14z" fill="'+c+'"/>';
+  if(f==='horns')extra='<path d="M18 22l-6-14 12 9zM46 22l6-14-12 9z" fill="#2a1d15"/>';
+  if(f==='stripes')extra='<path d="M14 30h8M14 38h7M50 30h-8M50 38h-7M30 12v6M36 12v6" stroke="#2a1d15" stroke-width="3" stroke-linecap="round"/>';
+  if(f==='crown')extra='<path d="M18 16l5-10 5 7 4-9 4 9 5-7 5 10z" fill="#c9a24a"/>';
+  return body+extra+'<circle cx="25" cy="32" r="5" fill="#f3ecdc"/><circle cx="39" cy="32" r="5" fill="#f3ecdc"/><circle cx="26" cy="33" r="2.3" fill="#1b1a1f"/><circle cx="40" cy="33" r="2.3" fill="#1b1a1f"/><path d="M24 44q8 5 16 0" stroke="#1b1a1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+}
+function spawnFoe(){
+  const k=FOES[(chap-1)%FOES.length],st=foeStats(chap);
+  const lap=Math.floor((chap-1)/FOES.length);
+  foe={...k,de:k.de+(lap?' '+'I'.repeat(lap+1):''),hp:st.hp,max:st.hp,atk:st.atk,every:st.every,cd:st.every};
+  $('foesvg').innerHTML=foeSVG(k);
+}
 
 function tsize(){const w=Math.min(window.innerWidth-56,470);return Math.floor((w-(COLS-1)*6)/COLS);}
 let TS=tsize(),GAP=6;
 function layout(){TS=tsize();boardEl.style.setProperty('--ts',TS+'px');boardEl.style.width=(COLS*TS+(COLS-1)*GAP)+'px';boardEl.style.height=(ROWS*TS+(ROWS-1)*GAP)+'px';
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const t=grid[c][r];if(t)place(t,c,r);}}
 function target(){return 1000+(chap-1)*500}
+function battle(){return mode==='battle';}
 
 function randLetter(){
   let vc=0,n=0;for(const col of grid||[])for(const t of col)if(t){n++;if(VOW.has(t.l))vc++;}
@@ -214,20 +279,29 @@ function randLetter(){
   if(n>10&&vc/n>0.5&&Math.random()<0.5){const v=['n','s','r','t','d','h','l','g'];return v[Math.random()*v.length|0];}
   return pool[Math.random()*pool.length|0];
 }
-function mkTile(l){const t={id:++uid,l:l||randLetter(),bonus:0,ink:0,el:document.createElement('div')};t.el.className='tile';t.el.tabIndex=0;t.el.dataset.id=t.id;boardEl.appendChild(t.el);paint(t);return t;}
+function mkTile(l){const t={id:++uid,l:l||randLetter(),bonus:0,ink:0,heal:0,el:document.createElement('div')};t.el.className='tile';t.el.tabIndex=0;t.el.dataset.id=t.id;boardEl.appendChild(t.el);paint(t);return t;}
 function paint(t){
   const L=t.l==='ch'?'CH':t.l.toUpperCase();
-  t.el.className='tile'+(t.l==='ch'?' ch':'')+(t.bonus===2?' red':'')+(t.bonus===3?' gold':'')+(t.ink?' ink':'')+(t.ink&&t.ink<=2?' danger':'');
-  t.el.dataset.b=t.bonus?'×'+t.bonus:'';
+  t.el.className='tile'+(t.l==='ch'?' ch':'')+(t.heal?' heal':'')+(t.bonus===2?' red':'')+(t.bonus===3?' gold':'')+(t.ink?' ink':'')+(t.ink&&t.ink<=2?' danger':'');
+  t.el.dataset.b=t.bonus?'×'+t.bonus:'';t.el.dataset.h=t.heal?'+'+t.heal:'';
   t.el.innerHTML=(t.ink?'<span class="cd">'+t.ink+'</span>':'')+'<span class="l">'+L+'</span><span class="v">'+VAL[t.l]+'</span>';
-  t.el.setAttribute('aria-label',L+(t.ink?' หยดหมึก เหลือ '+t.ink+' ตา':'')+(t.bonus?' คูณ '+t.bonus:''));
+  t.el.setAttribute('aria-label',L+(t.ink?' หยดหมึก เหลือ '+t.ink+' ตา':'')+(t.bonus?' คูณ '+t.bonus:'')+(t.heal?' ฟื้นเลือด '+t.heal:''));
+}
+function decorate(t){
+  if(!battle()||t.bonus||t.heal)return;const r=Math.random();
+  if(r<0.07)t.heal=6+chap;else if(r<0.105)t.bonus=2;else return;paint(t);
 }
 function place(t,c,r){t.c=c;t.r=r;t.el.style.width=t.el.style.height=TS+'px';t.el.style.left=c*(TS+GAP)+'px';t.el.style.top=r*(TS+GAP)+'px';}
 
-function newGame(){
+function newGame(m){
+  if(m)mode=m;try{localStorage.setItem('setzkasten-mode',mode)}catch(e){}loadBest();
   boardEl.innerHTML='';uid=0;grid=null;sel=[];score=0;chap=1;chapScore=0;lives=3;hints=3;found=[];moves=0;
+  php=pmax=100;foe=null;if(battle())spawnFoe();
+  $('arena').hidden=!battle();$('progbox').hidden=battle();$('livesbox').hidden=battle();
+  $('chaplbl').textContent=battle()?'ด่าน (Stufe)':'บท (Kapitel)';
+  $('modename').textContent=battle()?'โหมดต่อสู้: ใช้คำโจมตีศัตรู':'โหมดคลาสสิก: ลากต่อตัวอักษรให้เป็นคำภาษาเยอรมัน';
   grid=Array.from({length:COLS},()=>Array(ROWS).fill(null));
-  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const t=mkTile();grid[c][r]=t;}
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const t=mkTile();grid[c][r]=t;decorate(t);}
   layout();ensurePlayable();$('log').innerHTML='';$('lastbox').innerHTML='<div class="empty">คำที่คุณสร้างจะแสดงที่นี่ พร้อมเพศของคำนาม (der/die/das) และคำแปลตามภาษาที่เลือก</div>';
   $('over').hidden=true;updateUI();renderDict();
 }
@@ -239,11 +313,13 @@ function calc(s){
   const len=Math.min(w.length,12);const inkB=s.filter(t=>t.ink).length;
   return Math.round(base*LMULT[len]*mult*10)+inkB*50;
 }
+function dmgOf(p){return Math.max(1,Math.round(p/10));}
 function updateWord(){
   const w=wordOf(sel),ok=w.length>=3&&DICT.has(w);
   $('word').textContent=sel.length?w.toUpperCase():'แตะหรือลากตัวอักษร';
   $('wordbox').classList.toggle('valid',ok);
-  $('pts').textContent=ok?'+'+calc(sel):(w.length>=3?'ไม่พบคำนี้':'');
+  if(ok&&battle()){const h=sel.reduce((a,t)=>a+t.heal,0);$('pts').textContent='⚔ '+dmgOf(calc(sel))+(h?' · +'+h+' HP':'');}
+  else $('pts').textContent=ok?'+'+calc(sel):(w.length>=3?'ไม่พบคำนี้':'');
   $('submit').disabled=!ok||busy;
   for(const col of grid)for(const t of col)if(t){t.el.classList.toggle('sel',sel.includes(t));t.el.classList.toggle('last',t===sel[sel.length-1]);}
 }
@@ -252,7 +328,14 @@ function updateUI(){
   $('lives').innerHTML='✒'.repeat(lives)+'<span class="gone">'+'✒'.repeat(3-lives)+'</span>';
   $('hintn').textContent='('+hints+')';$('hint').disabled=hints<=0;
   $('prog').style.width=Math.min(100,chapScore/target()*100)+'%';
-  $('chapinfo').textContent='บทที่ '+chap+': '+chapScore+' / '+target()+' คะแนน เพื่อไปบทต่อไป';
+  if(battle()&&foe){
+    $('chapinfo').textContent='ด่าน '+chap+': สู้กับ '+foe.de+' ('+foe.th+')';
+    $('php').style.width=(php/pmax*100)+'%';$('phpt').textContent=php+' / '+pmax;
+    $('php').style.background=php/pmax<0.3?'var(--rubric)':php/pmax<0.6?'var(--brass)':'';
+    $('fname').innerHTML='<span class="de">'+foe.de+'</span>'+foe.th;
+    $('fhp').style.width=(foe.hp/foe.max*100)+'%';$('fhpt').textContent=foe.hp+' / '+foe.max;
+    $('fatk').textContent=foe.cd<=1?'โจมตีตาหน้า! ('+foe.atk+')':'โจมตีในอีก '+foe.cd+' ตา ('+foe.atk+')';
+  } else $('chapinfo').textContent='บทที่ '+chap+': '+chapScore+' / '+target()+' คะแนน เพื่อไปบทต่อไป';
   updateWord();
 }
 
@@ -310,7 +393,8 @@ $('hint').onclick=()=>{
   toast('ลองหาคำที่ขึ้นต้นด้วย '+path[0].l.toUpperCase()+' ตรงป้ายที่กระดิก ('+path.length+' ป้าย)');
 };
 $('shuffle').onclick=()=>{if(!busy)shuffle(true);};
-$('again').onclick=newGame;
+$('again').onclick=()=>pickMode();
+$('modebtn').onclick=()=>pickMode(true);
 
 // ---- game flow ----
 function submit(){
@@ -326,15 +410,38 @@ function submit(){
   // reward tile for long words: reuse anchor column, placed where gravity lands it
   let reward=w.length>=7?3:w.length>=5?2:0;
   refill(reward,anchor.c,used.length<=3?0.18:0);
+  if(battle()){
+    const dmg=dmgOf(pts),heal=used.reduce((a,t)=>a+t.heal,0);
+    foe.hp=Math.max(0,foe.hp-dmg);floatAt('foe','-'+dmg);bump('foe');
+    if(heal){php=Math.min(pmax,php+heal);floatAt('me','+'+heal+' HP');}
+    busy=false;
+    if(foe.hp<=0){updateUI();return foeDefeated();}
+    enemyTurn();updateUI();checkOver();return;
+  }
   tick(used.length);
   busy=false;updateUI();
   if(chapScore>=target())nextChapter();
   else checkOver();
 }
+function floatAt(id,txt){const el=document.createElement('div');el.className='dmg';el.textContent=txt;$(id).appendChild(el);setTimeout(()=>el.remove(),1000);}
+function bump(id){const el=$(id);el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');}
+function enemyTurn(){
+  foe.cd--;
+  if(foe.cd<=0){
+    foe.cd=foe.every;php=Math.max(0,php-foe.atk);
+    floatAt('me','-'+foe.atk);bump('me');const tr=document.querySelector('.tray');tr.classList.remove('flash');void tr.offsetWidth;tr.classList.add('flash');
+    toast(foe.de+' โจมตี! เสียเลือด '+foe.atk);
+  }
+}
+function foeDefeated(){
+  const old=foe;chap++;hints=3;php=Math.min(pmax,php+20);spawnFoe();updateUI();
+  const st=foeStats(chap);
+  showOver('Sieg!','<p>ชนะ <b>'+old.de+'</b> ('+old.th+') แล้ว!</p><p>ได้เลือดคืน 20 และคำใบ้ครบ 3 ครั้ง</p><p>ด่าน '+chap+': <b>'+foe.de+'</b> เลือด '+st.hp+' · ตีครั้งละ '+st.atk+' ทุก '+st.every+' ตา</p>','สู้ต่อ',()=>{$('over').hidden=true;});
+}
 function refill(reward,rc,extraInk){
   for(let c=0;c<COLS;c++){
     const keep=grid[c].filter(Boolean);const miss=ROWS-keep.length;const col=[];
-    for(let i=0;i<miss;i++){const t=mkTile();if(reward&&c===rc&&i===miss-1){t.bonus=reward;paint(t);reward=0;}col.push(t);
+    for(let i=0;i<miss;i++){const t=mkTile();if(reward&&c===rc&&i===miss-1){t.bonus=reward;paint(t);reward=0;}else decorate(t);col.push(t);
       t.el.style.width=t.el.style.height=TS+'px';t.el.style.left=c*(TS+GAP)+'px';t.el.style.top=(-(miss-i)*(TS+GAP))+'px';}
     grid[c]=col.concat(keep);
   }
@@ -343,6 +450,7 @@ function refill(reward,rc,extraInk){
   maybeInk(extraInk);ensurePlayable();
 }
 function maybeInk(extra){
+  if(battle())return;
   let n=0;for(const col of grid)for(const t of col)if(t.ink)n++;
   const cap=1+Math.floor(chap/2),p=0.06+0.04*chap+extra;
   if(n<cap&&moves>1&&Math.random()<p){
@@ -360,7 +468,7 @@ function shuffle(costsTurn){
   for(let i=all.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[all[i],all[j]]=[all[j],all[i]];}
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++)grid[c][r]=all[c*ROWS+r];
   sel=[];layout();ensurePlayable();
-  if(costsTurn){moves++;tick();maybeInk(0);}
+  if(costsTurn){moves++;if(battle())enemyTurn();else{tick();maybeInk(0);}}
   updateUI();checkOver();
 }
 function ensurePlayable(){
@@ -373,12 +481,16 @@ function nextChapter(){
   showOver('Kapitel '+chap,'<p>ผ่านบทที่ '+(chap-1)+' แล้ว!</p><p>ได้ขนนกคืน 1 อัน และคำใบ้ครบ 3 ครั้ง</p><p>บทนี้หยดหมึกจะมาบ่อยขึ้นและนับถอยหลังเร็วขึ้น</p>','ไปต่อ',()=>{$('over').hidden=true;});
 }
 function checkOver(){
-  if(lives>0)return;
+  if(battle()?php>0:lives>0)return;
   if(score>best){best=score;try{localStorage.setItem('setzkasten-best',best)}catch(e){}}
   const top=found.slice().sort((a,b)=>b.pts-a.pts)[0];
-  showOver('Ende','<p>คะแนนรวม</p><div class="big">'+score+'</div><p>ถึงบทที่ '+chap+' · สร้างได้ '+found.length+' คำ</p>'+(top?'<p>คำที่ดีที่สุด: <b>'+top.w.toUpperCase()+'</b> ('+top.pts+')</p>':''),'เล่นใหม่',newGame);
+  showOver(battle()?'Niederlage':'Ende','<p>คะแนนรวม</p><div class="big">'+score+'</div><p>ถึง'+(battle()?'ด่าน':'บท')+'ที่ '+chap+(battle()&&foe?' ('+foe.de+')':'')+' · สร้างได้ '+found.length+' คำ</p>'+(top?'<p>คำที่ดีที่สุด: <b>'+top.w.toUpperCase()+'</b> ('+top.pts+')</p>':''),'เล่นใหม่',newGame);
 }
-function showOver(t,b,btn,fn){$('ovt').textContent=t;$('ovb').innerHTML=b;$('again').textContent=btn;$('again').onclick=fn;$('over').hidden=false;$('again').focus();}
+function showOver(t,b,btn,fn){$('ovt').textContent=t;$('ovb').innerHTML=b;$('again').hidden=!btn;if(btn){$('again').textContent=btn;$('again').onclick=fn;}$('over').hidden=false;(btn?$('again'):$('ovb').querySelector('button'))?.focus();}
+function pickMode(cancelable){
+  showOver('Spielmodus','<p>เลือกแบบเกม</p><div class="modes"><button data-m="classic"><b>Klassisch</b><span>โหมดคลาสสิก: ทำคะแนนให้ถึงเป้าเพื่อผ่านบท ระวังหยดหมึก</span></button><button data-m="battle"><b>Kampf</b><span>โหมดต่อสู้: คะแนนกลายเป็นดาเมจ ล้มศัตรูทีละด่าน มีป้าย +HP ฟื้นเลือด และ ×2 เพิ่มดาเมจ</span></button>'+(cancelable?'<button data-m=""><span>กลับไปเล่นต่อ</span></button>':'')+'</div>',null,null);
+  for(const b of $('ovb').querySelectorAll('.modes button'))b.onclick=()=>{if(b.dataset.m)newGame(b.dataset.m);else $('over').hidden=true;};
+}
 
 function findWord(minLen){
   let bestP=null;const seen=new Set();
@@ -423,6 +535,7 @@ function logWord(w,pts){found.push({w,pts});renderDict();}
 for(const b of document.querySelectorAll('.langs button'))b.onclick=()=>{lang=b.dataset.l;try{localStorage.setItem('setzkasten-lang',lang)}catch(e){}renderDict();};
 let toastT;function toast(m){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el);}el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2800);}
 window.addEventListener('resize',()=>{if(grid)layout();});
-newGame();
+try{const m=localStorage.getItem('setzkasten-mode');if(m==='battle'||m==='classic')mode=m;}catch(e){}
+newGame();pickMode();
 })();
 </script>

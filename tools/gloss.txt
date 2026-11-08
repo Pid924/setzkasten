@@ -1,0 +1,470 @@
+der Hund|สุนัข
+die Katze|แมว
+das Haus|บ้าน
+der Baum|ต้นไม้
+die Blume|ดอกไม้
+das Auto|รถยนต์
+die Stadt|เมือง
+das Land|ประเทศ, ชนบท
+der Mann|ผู้ชาย
+die Frau|ผู้หญิง, ภรรยา
+das Kind|เด็ก
+der Vater|พ่อ
+die Mutter|แม่
+der Bruder|พี่ชาย, น้องชาย
+die Schwester|พี่สาว, น้องสาว
+der Freund|เพื่อน (ชาย), แฟน
+die Freundin|เพื่อน (หญิง), แฟน
+die Liebe|ความรัก
+das Herz|หัวใจ
+der Kopf|ศีรษะ
+die Hand|มือ
+der Arm|แขน
+das Bein|ขา
+der Fuss|เท้า
+das Auge|ตา
+das Ohr|หู
+die Nase|จมูก
+der Mund|ปาก
+der Zahn|ฟัน
+das Haar|ผม
+die Zeit|เวลา
+der Tag|วัน
+die Nacht|กลางคืน
+der Morgen|ตอนเช้า
+der Abend|ตอนเย็น
+die Woche|สัปดาห์
+der Monat|เดือน
+das Jahr|ปี
+die Uhr|นาฬิกา
+heute|วันนี้
+morgen|พรุ่งนี้
+gestern|เมื่อวาน
+jetzt|ตอนนี้
+immer|เสมอ
+nie|ไม่เคย
+oft|บ่อย
+das Wasser|น้ำ
+das Brot|ขนมปัง
+die Milch|นม
+der Kaffee|กาแฟ
+der Tee|ชา
+das Bier|เบียร์
+der Wein|ไวน์
+das Ei|ไข่
+der Apfel|แอปเปิล
+die Birne|ลูกแพร์
+der Reis|ข้าว
+das Fleisch|เนื้อสัตว์
+der Fisch|ปลา
+die Suppe|ซุป
+der Kuchen|เค้ก
+der Zucker|น้ำตาล
+das Salz|เกลือ
+das Essen|อาหาร
+essen|กิน
+trinken|ดื่ม
+gehen|ไป, เดิน
+kommen|มา
+sehen|เห็น
+hören|ได้ยิน, ฟัง
+sagen|พูด, บอก
+sprechen|พูด
+lesen|อ่าน
+schreiben|เขียน
+lernen|เรียน
+spielen|เล่น
+arbeiten|ทำงาน
+schlafen|นอนหลับ
+laufen|วิ่ง, เดิน
+fahren|ขับ, เดินทาง (ด้วยยานพาหนะ)
+fliegen|บิน
+singen|ร้องเพลง
+tanzen|เต้นรำ
+lachen|หัวเราะ
+weinen|ร้องไห้
+kaufen|ซื้อ
+geben|ให้
+nehmen|เอา, รับ
+machen|ทำ
+haben|มี
+sein|เป็น, อยู่
+werden|กลายเป็น
+können|สามารถ
+wollen|ต้องการ
+müssen|ต้อง
+dürfen|ได้รับอนุญาต
+lieben|รัก
+finden|พบ, คิดว่า
+suchen|ค้นหา
+wissen|รู้
+denken|คิด
+glauben|เชื่อ
+fragen|ถาม
+antworten|ตอบ
+helfen|ช่วย
+warten|รอ
+öffnen|เปิด
+schliessen|ปิด
+bleiben|อยู่, คงอยู่
+wohnen|อาศัยอยู่
+leben|มีชีวิต, อาศัย
+sterben|ตาย
+stehen|ยืน
+sitzen|นั่ง
+liegen|นอน, วางอยู่
+bringen|นำมา
+zeigen|แสดง, ชี้
+rufen|เรียก, ตะโกน
+kochen|ทำอาหาร, ต้ม
+waschen|ล้าง, ซัก
+bauen|สร้าง
+malen|วาดภาพ
+reisen|ท่องเที่ยว
+schwimmen|ว่ายน้ำ
+tragen|ถือ, สวมใส่
+vergessen|ลืม
+verstehen|เข้าใจ
+beginnen|เริ่ม
+enden|จบ
+gut|ดี
+schlecht|แย่, ไม่ดี
+gross|ใหญ่
+klein|เล็ก
+alt|แก่, เก่า
+neu|ใหม่
+jung|หนุ่มสาว, อายุน้อย
+schön|สวย
+hässlich|น่าเกลียด
+heiss|ร้อน
+kalt|หนาว, เย็น
+warm|อบอุ่น
+schnell|เร็ว
+langsam|ช้า
+lang|ยาว
+kurz|สั้น
+hoch|สูง
+tief|ลึก
+leicht|เบา, ง่าย
+schwer|หนัก, ยาก
+voll|เต็ม
+leer|ว่างเปล่า
+rot|สีแดง
+blau|สีน้ำเงิน
+grün|สีเขียว
+gelb|สีเหลือง
+schwarz|สีดำ
+weiss|สีขาว
+grau|สีเทา
+braun|สีน้ำตาล
+froh|ดีใจ
+traurig|เศร้า
+müde|เหนื่อย, ง่วง
+krank|ป่วย
+gesund|สุขภาพดี
+reich|รวย
+arm|จน
+stark|แข็งแรง
+dumm|โง่
+klug|ฉลาด
+nett|ใจดี
+lieb|น่ารัก, ใจดี
+laut|เสียงดัง
+leise|เงียบ, เบา
+nah|ใกล้
+weit|ไกล
+richtig|ถูกต้อง
+falsch|ผิด
+wichtig|สำคัญ
+einfach|ง่าย
+teuer|แพง
+billig|ถูก (ราคา)
+die Sonne|ดวงอาทิตย์
+der Mond|ดวงจันทร์
+der Stern|ดาว
+der Himmel|ท้องฟ้า, สวรรค์
+die Erde|โลก, ดิน
+das Meer|ทะเล
+der See|ทะเลสาบ
+der Fluss|แม่น้ำ
+der Berg|ภูเขา
+der Wald|ป่า
+das Feld|ทุ่ง
+der Regen|ฝน
+der Schnee|หิมะ
+der Wind|ลม
+das Eis|น้ำแข็ง, ไอศกรีม
+das Feuer|ไฟ
+die Luft|อากาศ
+der Stein|หิน
+der Sand|ทราย
+das Gras|หญ้า
+das Blatt|ใบไม้, แผ่นกระดาษ
+die Rose|ดอกกุหลาบ
+das Tier|สัตว์
+der Vogel|นก
+das Pferd|ม้า
+die Kuh|วัว
+das Schwein|หมู
+das Schaf|แกะ
+die Maus|หนู
+der Bär|หมี
+der Löwe|สิงโต
+der Affe|ลิง
+die Ente|เป็ด
+das Huhn|ไก่
+die Biene|ผึ้ง
+der Wurm|หนอน
+die Schlange|งู
+der Tisch|โต๊ะ
+der Stuhl|เก้าอี้
+das Bett|เตียง
+die Tür|ประตู
+das Fenster|หน้าต่าง
+die Wand|ผนัง
+das Zimmer|ห้อง
+die Küche|ห้องครัว
+der Garten|สวน
+die Lampe|โคมไฟ
+das Buch|หนังสือ
+der Brief|จดหมาย
+das Wort|คำ
+der Name|ชื่อ
+die Sprache|ภาษา
+die Schule|โรงเรียน
+der Lehrer|ครู (ชาย)
+die Klasse|ชั้นเรียน
+die Arbeit|งาน
+das Geld|เงิน
+der Preis|ราคา, รางวัล
+der Laden|ร้านค้า
+der Markt|ตลาด
+die Strasse|ถนน
+der Weg|ทาง
+die Bahn|ทางรถไฟ, รถไฟ
+der Zug|รถไฟ
+das Rad|ล้อ, จักรยาน
+das Boot|เรือ
+das Schiff|เรือ (ใหญ่)
+der Bus|รถเมล์
+die Reise|การเดินทาง
+das Hotel|โรงแรม
+die Kirche|โบสถ์
+das Dorf|หมู่บ้าน
+die Welt|โลก
+der Mensch|มนุษย์
+die Leute|ผู้คน
+das Leben|ชีวิต
+der Tod|ความตาย
+der Traum|ความฝัน
+die Angst|ความกลัว
+das Glück|โชค, ความสุข
+die Freude|ความยินดี
+der Spass|ความสนุก
+das Spiel|เกม, การเล่น
+das Lied|เพลง
+die Musik|ดนตรี
+das Bild|รูปภาพ
+die Farbe|สี
+der Film|ภาพยนตร์
+das Kleid|ชุดกระโปรง
+der Hut|หมวก
+der Schuh|รองเท้า
+die Hose|กางเกง
+das Hemd|เสื้อเชิ้ต
+die Tasche|กระเป๋า
+der Schlüssel|กุญแจ
+das Telefon|โทรศัพท์
+die Karte|บัตร, แผนที่
+die Frage|คำถาม
+die Antwort|คำตอบ
+die Idee|ความคิด
+der Grund|เหตุผล, พื้นดิน
+die Hilfe|ความช่วยเหลือ
+der Krieg|สงคราม
+der Frieden|สันติภาพ
+der König|กษัตริย์
+die Königin|ราชินี
+das Gold|ทองคำ
+das Silber|เงิน (โลหะ)
+das Eisen|เหล็ก
+das Holz|ไม้
+das Glas|แก้ว
+das Papier|กระดาษ
+die Rede|สุนทรพจน์
+das Ende|ตอนจบ
+der Anfang|จุดเริ่มต้น
+die Seite|ด้าน, หน้า
+die Mitte|ตรงกลาง
+oben|ข้างบน
+unten|ข้างล่าง
+links|ซ้าย
+rechts|ขวา
+hier|ที่นี่
+dort|ที่นั่น
+ja|ใช่
+nein|ไม่
+danke|ขอบคุณ
+bitte|กรุณา, ด้วยความยินดี
+hallo|สวัสดี
+tschüss|ลาก่อน
+eins|หนึ่ง
+zwei|สอง
+drei|สาม
+vier|สี่
+fünf|ห้า
+sechs|หก
+sieben|เจ็ด
+acht|แปด
+neun|เก้า
+zehn|สิบ
+elf|สิบเอ็ด
+zwölf|สิบสอง
+hundert|หนึ่งร้อย
+tausend|หนึ่งพัน
+alle|ทุกคน, ทั้งหมด
+viel|มาก
+wenig|น้อย
+mehr|มากขึ้น
+nichts|ไม่มีอะไร
+etwas|บางอย่าง
+und|และ
+oder|หรือ
+aber|แต่
+weil|เพราะว่า
+wenn|ถ้า, เมื่อ
+mit|กับ
+ohne|ไม่มี, ปราศจาก
+für|สำหรับ
+gegen|ต่อต้าน, ราว ๆ
+nach|หลังจาก, ไปยัง
+vor|ก่อน, ข้างหน้า
+unter|ใต้
+über|เหนือ, เกี่ยวกับ
+neben|ข้าง ๆ
+zwischen|ระหว่าง
+wer|ใคร
+was|อะไร
+wo|ที่ไหน
+wie|อย่างไร
+warum|ทำไม
+wann|เมื่อไร
+die Tante|ป้า, น้า, อา (หญิง)
+der Onkel|ลุง, น้า, อา (ชาย)
+die Oma|คุณยาย, คุณย่า
+der Opa|คุณตา, คุณปู่
+das Baby|ทารก
+der Sohn|ลูกชาย
+die Tochter|ลูกสาว
+die Familie|ครอบครัว
+der Arzt|หมอ
+die Polizei|ตำรวจ
+der Koch|พ่อครัว
+der Bauer|ชาวนา
+das Ziel|เป้าหมาย
+die Nummer|หมายเลข
+die Zahl|ตัวเลข
+der Punkt|จุด, คะแนน
+die Linie|เส้น
+der Kreis|วงกลม
+das Licht|แสง
+der Schatten|เงา
+die Kerze|เทียน
+die Nadel|เข็ม
+der Ring|แหวน
+die Kette|สร้อย, โซ่
+der Ball|ลูกบอล
+das Netz|ตาข่าย
+die Tasse|ถ้วย
+der Teller|จาน
+das Messer|มีด
+die Gabel|ส้อม
+der Löffel|ช้อน
+die Butter|เนย
+der Käse|ชีส
+die Wurst|ไส้กรอก
+die Nuss|ถั่ว
+die Banane|กล้วย
+die Tomate|มะเขือเทศ
+die Zwiebel|หัวหอม
+die Kartoffel|มันฝรั่ง
+der Honig|น้ำผึ้ง
+das Obst|ผลไม้
+das Gemüse|ผัก
+der Hunger|ความหิว
+der Durst|ความกระหาย
+der Sommer|ฤดูร้อน
+der Winter|ฤดูหนาว
+der Frühling|ฤดูใบไม้ผลิ
+der Herbst|ฤดูใบไม้ร่วง
+der Sturm|พายุ
+die Wolke|เมฆ
+die Insel|เกาะ
+der Strand|ชายหาด
+die Brücke|สะพาน
+der Turm|หอคอย
+die Burg|ปราสาท
+das Tor|ประตูใหญ่, ประตู (ฟุตบอล)
+der Hof|ลานบ้าน, ราชสำนัก
+die Ecke|มุม
+der Platz|ที่, จัตุรัส
+der Park|สวนสาธารณะ
+das Kino|โรงภาพยนตร์
+das Museum|พิพิธภัณฑ์
+die Bank|ธนาคาร, ม้านั่ง
+die Post|ไปรษณีย์
+der Kunde|ลูกค้า
+der Gast|แขก
+das Geschenk|ของขวัญ
+die Party|งานเลี้ยง
+der Witz|มุกตลก
+die Nachricht|ข่าว, ข้อความ
+die Zeitung|หนังสือพิมพ์
+die Geschichte|เรื่องราว, ประวัติศาสตร์
+das Märchen|นิทาน
+der Drache|มังกร
+die Hexe|แม่มด
+der Zauber|เวทมนตร์
+der Riese|ยักษ์
+der Zwerg|คนแคระ
+der Held|ฮีโร่, วีรบุรุษ
+der Schatz|สมบัติ, ที่รัก
+das Schwert|ดาบ
+der Ritter|อัศวิน
+die Krone|มงกุฎ
+ich|ฉัน
+du|เธอ, คุณ
+er|เขา (ผู้ชาย)
+sie|เธอ, พวกเขา
+wir|เรา
+ihr|พวกเธอ, ของเธอ
+es|มัน
+mein|ของฉัน
+dein|ของเธอ
+nicht|ไม่
+kein|ไม่มี
+auch|ด้วย, เช่นกัน
+nur|เท่านั้น
+noch|ยัง, อีก
+schon|แล้ว
+sehr|มาก
+dann|แล้วก็
+wieder|อีกครั้ง
+dass|ว่า
+von|จาก, ของ
+aus|ออกจาก, จาก
+bei|ที่, ใกล้
+durch|ผ่าน
+bis|จนถึง
+der|คำนำหน้านามเพศชาย
+die|คำนำหน้านามเพศหญิง / พหูพจน์
+das|คำนำหน้านามเพศกลาง, นั่น
+ein|หนึ่ง (คำนำหน้านาม)
+eine|หนึ่ง (คำนำหน้านาม)
+war|เคยเป็น (อดีตของ sein)
+ist|เป็น, อยู่
+sind|เป็น, อยู่ (พหูพจน์)
+hat|มี
+wurde|ได้กลายเป็น, ถูก
+ging|ไปแล้ว (อดีตของ gehen)
+kam|มาแล้ว (อดีตของ kommen)

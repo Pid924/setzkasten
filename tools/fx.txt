@@ -1,0 +1,149 @@
+und|and|en
+oder|or|of
+aber|but|maar
+weil|because|omdat
+wenn|if, when|als, wanneer
+dass|that|dat
+denn|because, then|want, dan
+mit|with|met
+ohne|without|zonder
+für|for|voor
+gegen|against|tegen
+nach|after, to|na, naar
+vor|before, in front of|voor
+unter|under|onder
+über|over, about|over, boven
+neben|next to|naast
+zwischen|between|tussen
+durch|through|door
+bei|at, near|bij
+von|from, of|van
+aus|out of, from|uit
+seit|since|sinds
+bis|until|tot
+nicht|not|niet
+kein|no, not a|geen
+keine|no, not a|geen
+nein|no|nee
+nur|only|alleen, slechts
+auch|also|ook
+noch|still, yet|nog
+schon|already|al
+sehr|very|zeer, heel
+ganz|whole, quite|heel, helemaal
+hier|here|hier
+dort|there|daar
+jetzt|now|nu
+dann|then|dan
+heute|today|vandaag
+morgen|tomorrow, morning|morgen, ochtend
+gestern|yesterday|gisteren
+immer|always|altijd
+nie|never|nooit
+oft|often|vaak
+wieder|again|weer
+viel|much, a lot|veel
+viele|many|veel
+wenig|little|weinig
+mehr|more|meer
+alle|all|alle
+alles|everything|alles
+nichts|nothing|niets
+etwas|something|iets
+wer|who|wie
+was|what|wat
+wie|how|hoe
+warum|why|waarom
+wann|when|wanneer
+woher|where from|waarvandaan
+wohin|where to|waarheen
+ich|I|ik
+mich|me|mij
+mir|to me|mij
+sie|she, they|zij
+ihr|you (plural), her|jullie, haar
+uns|us|ons
+euch|you (plural)|jullie
+ihn|him|hem
+ihm|to him|hem
+ihnen|them|hun
+dich|you|jou
+dir|to you|jou
+mein|my|mijn
+meine|my|mijn
+dein|your|jouw
+deine|your|jouw
+sein|to be, his|zijn
+seine|his|zijn
+unser|our|ons
+euer|your (plural)|jullie
+der|the|de
+die|the|de
+das|the, that|het, dat
+den|the|de
+dem|the|de
+des|of the|van de
+ein|a, one|een
+eine|a, one|een
+einen|a, one|een
+einem|a, one|een
+einer|a, one|een
+dies|this|dit
+diese|this, these|deze
+dieser|this|deze
+dieses|this|dit
+jeder|every|ieder, elk
+jede|every|iedere, elke
+man|one, you (people)|men
+bitte|please|alsjeblieft
+danke|thank you|dank je
+hallo|hello|hallo
+tschüss|bye|doei
+ja|yes|ja
+doch|but, yes (contradicting)|toch
+also|so, therefore|dus
+sondern|but rather|maar
+damit|so that, with it|zodat, daarmee
+eins|one|een
+zwei|two|twee
+drei|three|drie
+vier|four|vier
+fünf|five|vijf
+sechs|six|zes
+sieben|seven|zeven
+acht|eight|acht
+neun|nine|negen
+zehn|ten|tien
+elf|eleven|elf
+zwölf|twelve|twaalf
+hundert|hundred|honderd
+tausend|thousand|duizend
+oben|above, upstairs|boven
+unten|below, downstairs|beneden
+links|left|links
+rechts|right|rechts
+haben|to have|hebben
+werden|to become|worden
+können|can, to be able to|kunnen
+müssen|must, to have to|moeten
+wollen|to want|willen
+dürfen|may, to be allowed to|mogen
+sollen|should|zullen, moeten
+mögen|to like|houden van, lusten
+war|was|was
+waren|were|waren
+ist|is|is
+sind|are|zijn
+bin|am|ben
+bist|are|bent
+hat|has|heeft
+habe|have|heb
+wurde|became, was|werd
+wird|becomes, will|wordt
+kann|can|kan
+muss|must|moet
+will|wants|wil
+ging|went|ging
+kam|came|kwam
+sah|saw|zag
+gab|gave|gaf

@@ -2,7 +2,12 @@
 
 เกมต่อคำศัพท์ภาษาเยอรมันบนกระดานตัวอักษร ลากตัวอักษรที่อยู่ติดกันให้เป็นคำ พร้อมคำแปลไทยและเพศของคำนาม (der/die/das)
 
-ทั้งเกมอยู่ในไฟล์เดียว `index.html` ทุกครั้งที่ push เข้า `main` GitHub Actions จะ deploy ขึ้น GitHub Pages ให้อัตโนมัติ
+ตัวเกมหลักเขียนด้วย **Godot 4.3** อยู่ในโฟลเดอร์ `godot/` ทุกครั้งที่ push เข้า `main` GitHub Actions จะ export เป็นเวอร์ชันเว็บแล้ว deploy ขึ้น GitHub Pages ให้อัตโนมัติ
+
+- เวอร์ชัน Godot: https://pid924.github.io/setzkasten/
+- เวอร์ชัน HTML เดิม (ไฟล์เดียว `html/index.html`): https://pid924.github.io/setzkasten/html/
+
+เปิดโปรเจกต์ใน Godot: เปิด Godot 4.3 แล้วเลือก Import → `godot/project.godot`
 
 ## เปิดใช้ GitHub Pages ครั้งแรก
 Settings → Pages → Build and deployment → Source: **GitHub Actions**
@@ -20,7 +25,7 @@ Settings → Pages → Build and deployment → Source: **GitHub Actions**
 กดปุ่ม ไทย / EN / NL ในสมุดคำศัพท์เพื่อเลือกภาษาคำแปล (เกมจำภาษาที่เลือกไว้) คำที่ผันรูปจะแสดงรูปพจนานุกรมด้วย เช่น HÄUSER → das Haus
 
 ## สร้างคลังคำใหม่
-สคริปต์อยู่ใน `tools/` (`build_dict.py` สร้างคำแปล แล้ว `mkhtml.py` รวมเป็น `index.html`) ส่วนคำแปลไทยที่เขียนเองอยู่ใน `tools/gloss.txt` และคำเชื่อม/สรรพนามอยู่ใน `tools/fx.txt`
+สคริปต์อยู่ใน `tools/` (`build_dict.py` สร้างคำแปล แล้ว `mkhtml.py` รวมเป็น `html/index.html`) ข้อมูลที่เกม Godot ใช้อยู่ใน `godot/data/` ส่วนคำแปลไทยที่เขียนเองอยู่ใน `tools/gloss.txt` และคำเชื่อม/สรรพนามอยู่ใน `tools/fx.txt`
 
 ## ที่มาของคลังคำ
 - รายการคำความถี่สูงจาก [FrequencyWords](https://github.com/hermitdave/FrequencyWords) (OpenSubtitles 2018)

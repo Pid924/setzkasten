@@ -1,4 +1,5 @@
 <title>Setzkasten</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect x=%274%27 y=%276%27 width=%2756%27 height=%2756%27 rx=%2710%27 fill=%27%23b9a888%27/%3E%3Crect x=%274%27 y=%272%27 width=%2756%27 height=%2754%27 rx=%2710%27 fill=%27%23e9dfc9%27/%3E%3Cpath d=%27M41 15c-3-3-8-4-12-3-6 1-9 5-8 10 1 4 5 6 10 8 5 2 7 4 6 7-1 4-6 5-10 4-3-1-6-3-7-6%27 fill=%27none%27 stroke=%27%23b23a2b%27 stroke-width=%277%27 stroke-linecap=%27round%27/%3E%3C/svg%3E">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,33 +70,6 @@ h1 .s{color:var(--rubric)}
 .tile.hint{animation:hint 1s 2}
 .tile.heal{background:linear-gradient(180deg,#cfe6b8,#86b56a);color:#132a0c}
 .tile.heal::before{content:attr(data-h);position:absolute;left:4px;top:2px;font-size:calc(var(--ts)*.2);font-family:var(--f-body);font-weight:600;color:#1d4a12}
-.arena{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px;margin-bottom:12px}
-.fighter{background:var(--groove);border:1px solid #4a3828;border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0}
-.foe{flex-direction:row;align-items:center;gap:10px}
-.foe svg{width:64px;height:64px;flex:none}
-.foe .fb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-.fname{font-weight:600;font-size:14px;line-height:1.25;overflow-wrap:anywhere}
-.fname .de{font-family:var(--f-display);font-size:20px;font-weight:600;display:block;line-height:1.05}
-.fname small{color:var(--muted);font-weight:400}
-.hpbar{height:10px;background:#120c08;border-radius:5px;overflow:hidden;border:1px solid #4a3828}
-.hpbar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .35s}
-.hpbar.enemy i{background:var(--rubric)}
-.hpt{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.hpt b{color:var(--paper);font-weight:600}
-.atk{color:#ff8f7a}
-.hit{animation:hit .4s}
-@keyframes hit{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
-.flash{animation:flash .5s}
-@keyframes flash{30%{box-shadow:inset 0 0 0 3px var(--rubric),0 0 24px rgba(178,58,43,.8)}}
-.dmg{position:absolute;right:14px;top:-4px;font-family:var(--f-sort);font-weight:700;font-size:24px;color:#ffd27a;text-shadow:0 2px 0 #000;pointer-events:none;animation:pop 1s forwards}
-.fighter{position:relative}
-.modes{display:grid;gap:10px;margin-top:14px}
-.card .modes button{width:100%;margin:0;text-align:left;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);padding:10px 14px;display:block}
-.card .modes button b{display:block;font-family:var(--f-display);font-size:22px;font-weight:600}
-.card .modes button span{font-size:13.5px;font-weight:400;color:#3d372f}
-.card .modes button:hover{background:#fff8e6}
-.modebtn{min-height:36px;padding:5px 12px;font-size:13px}
-@media (max-width:420px){.arena{grid-template-columns:minmax(0,1fr)}}
 .tile:focus-visible{outline:3px solid var(--brass)}
 @keyframes throb{50%{box-shadow:0 3px 0 #000,0 0 14px 3px rgba(255,90,60,.6)}}
 @keyframes hint{50%{transform:translateY(-6px);box-shadow:0 0 0 3px var(--brass),0 8px 10px rgba(0,0,0,.4)}}
@@ -161,58 +135,116 @@ button small{font-weight:400;opacity:.75}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);border:1px solid var(--brass);padding:10px 16px;border-radius:8px;z-index:30;max-width:calc(100% - 32px);text-align:center;font-size:14px}
 @media (prefers-reduced-motion:reduce){.tile{transition:none}.tile.hint,.tile.ink.danger,.pop{animation:none}}
 </style>
+<style>
+/* ---- battle stage ---- */
+.stage{position:relative;height:178px;margin-bottom:12px;border-radius:10px;overflow:hidden;border:2px solid #4a3828;
+  background:radial-gradient(120% 90% at 50% 0%,#4a3626 0%,#2a1d15 60%,#1a120c 100%)}
+.stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(180deg,#3a2a1f,#24180f);border-top:2px solid #5a4632}
+.side{position:absolute;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:2;width:42%}
+.side.me{left:2%}.side.enemy{right:2%}
+.side .bars{width:100%;max-width:190px;display:flex;flex-direction:column;gap:2px;margin-bottom:4px}
+.side .nm{font-size:12.5px;line-height:1.2;color:var(--paper);text-align:center;overflow-wrap:anywhere}
+.side .nm b{font-family:var(--f-display);font-weight:600;font-size:18px;display:block;line-height:1}
+.hpbar{height:9px;background:#120c08;border-radius:5px;overflow:hidden;border:1px solid #5a4632}
+.hpbar i{display:block;height:100%;width:100%;background:var(--ok);transition:width .35s}
+.hpbar.enemy i{background:var(--rubric)}
+.hpt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+.hpt b{color:var(--paper);font-weight:600}
+.atk{color:#ff8f7a}
+.sprite{width:88px;height:88px;position:relative;z-index:3}
+.sprite svg{width:100%;height:100%;overflow:visible;display:block}
+.idle{animation:idle 2.4s ease-in-out infinite}
+.side.enemy .idle{animation-duration:1.9s}
+@keyframes idle{50%{transform:translateY(-4px)}}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:6}
+.proj{position:absolute;width:26px;height:26px;border-radius:4px;display:grid;place-items:center;font-family:var(--f-sort);font-weight:700;font-size:16px;
+  background:linear-gradient(180deg,#f6d983,var(--brass));color:var(--ink);box-shadow:0 0 10px rgba(255,210,122,.8)}
+.proj.crit{background:linear-gradient(180deg,#ffe9a6,#e3742f);box-shadow:0 0 16px rgba(255,120,60,.95)}
+.inkball{position:absolute;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#5b5670,#121016 70%);box-shadow:0 0 12px rgba(0,0,0,.8)}
+.spark{position:absolute;width:8px;height:8px;border-radius:2px}
+.dmg{position:absolute;font-family:var(--f-sort);font-weight:700;font-size:26px;color:#ffd27a;text-shadow:0 2px 0 #000,0 0 8px rgba(0,0,0,.6);white-space:nowrap;transform:translateX(-50%)}
+.dmg.heal{color:#a8e08a}.dmg.hurt{color:#ff8f7a}.dmg.crit{font-size:32px;color:#ffb35a}
+.shake{animation:shake .45s}
+@keyframes shake{15%{transform:translate(-7px,2px)}35%{transform:translate(6px,-2px)}55%{transform:translate(-5px,1px)}75%{transform:translate(4px,0)}}
+.splat{position:absolute;inset:0;pointer-events:none;z-index:8;border-radius:10px;
+  background:radial-gradient(circle at 30% 40%,rgba(18,16,22,.55) 0 8%,transparent 9%),radial-gradient(circle at 70% 65%,rgba(18,16,22,.5) 0 6%,transparent 7%),radial-gradient(circle at 55% 25%,rgba(18,16,22,.45) 0 4%,transparent 5%),radial-gradient(circle at 20% 75%,rgba(18,16,22,.45) 0 5%,transparent 6%)}
+.modes{display:grid;gap:10px;margin-top:12px}
+.card .modes button{width:100%;margin:0;text-align:left;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);padding:10px 14px;display:block}
+.card .modes button b{display:block;font-family:var(--f-display);font-size:22px;font-weight:600}
+.card .modes button span{font-size:13.5px;font-weight:400;color:#3d372f}
+.card .modes button:hover{background:#fff8e6}
+.uil{display:flex;justify-content:center;margin-top:8px}
+.card .langs button{width:auto;margin:0;background:transparent;color:var(--ink)}
+.card .langs button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.modebtn{min-height:36px;padding:5px 12px;font-size:13px}
+.confirm-row{display:flex;gap:8px;margin-top:14px}
+.card .confirm-row button{margin:0;flex:1}
+.card .confirm-row button.alt{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.skip{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:14px;cursor:pointer}
+.skip input{width:18px;height:18px;accent-color:var(--rubric)}
+.warn{color:var(--rubric);font-weight:600}
+.utr{font-size:12px;color:#6d6252;font-style:italic}
+.addtr{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.addtr input{flex:1 1 160px;min-width:0;font:inherit;font-size:15px;padding:7px 10px;border:1.5px solid var(--ink);border-radius:6px;background:#fffdf6;color:var(--ink)}
+.proof .lnk{background:transparent;border:1.5px dashed var(--rubric);color:var(--rubric);min-height:34px;padding:4px 10px;font-size:13.5px;margin-top:6px}
+.proof .lnk:hover{background:rgba(178,58,43,.07)}
+.proof .lnk.sm{border-style:solid;border-color:transparent;padding:2px 6px;min-height:28px;margin:0;font-size:12.5px;text-decoration:underline}
+.proof .save{background:var(--ink);color:var(--paper);border-color:var(--ink);min-height:38px;padding:6px 14px}
+.proof .cancel{background:transparent;color:var(--ink);border:1.5px solid var(--ink);min-height:38px;padding:6px 12px}
+@media (max-width:420px){.sprite{width:68px;height:68px}.stage{height:206px}.side{width:46%}.side .nm b{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.idle,.shake{animation:none}}
+</style>
 
 <div class="wrap">
   <header>
     <h1>Setz<span class="s">k</span>asten</h1>
-    <div class="tag"><span id="modename">ลากต่อตัวอักษรที่อยู่ติดกันให้เป็นคำภาษาเยอรมัน</span> <button class="modebtn" id="modebtn">เปลี่ยนโหมด</button></div>
+    <div class="tag"><span id="modename"></span> <button class="modebtn" id="modebtn" data-i="changeMode"></button></div>
   </header>
   <div class="game">
     <section>
       <div class="stats">
-        <div class="stat"><span>คะแนน</span><b id="score">0</b></div>
-        <div class="stat"><span id="chaplbl">บท (Kapitel)</span><b id="chap">1</b></div>
-        <div class="stat" id="livesbox"><span>ขนนก (ชีวิต)</span><b class="lives" id="lives">✒✒✒</b></div>
-        <div class="stat"><span>สถิติสูงสุด</span><b id="best">0</b></div>
+        <div class="stat"><span data-i="score"></span><b id="score">0</b></div>
+        <div class="stat"><span id="chaplbl"></span><b id="chap">1</b></div>
+        <div class="stat" id="livesbox"><span data-i="lives"></span><b class="lives" id="lives">✒✒✒</b></div>
+        <div class="stat"><span data-i="best"></span><b id="best">0</b></div>
       </div>
-      <div class="progress" id="progbox" title="คะแนนในบทนี้"><i id="prog"></i></div>
-      <div class="arena" id="arena" hidden>
-        <div class="fighter" id="me"><div class="fname"><span class="de">Du</span>นักเรียงพิมพ์ (คุณ)</div><div class="hpbar"><i id="php"></i></div><div class="hpt">เลือด <b id="phpt">100 / 100</b></div></div>
-        <div class="fighter foe" id="foe"><svg id="foesvg" viewBox="0 0 64 64" aria-hidden="true"></svg><div class="fb"><div class="fname" id="fname"></div><div class="hpbar enemy"><i id="fhp"></i></div><div class="hpt">เลือด <b id="fhpt"></b> · <span class="atk" id="fatk"></span></div></div></div>
+      <div class="progress" id="progbox"><i id="prog"></i></div>
+      <div class="stage" id="stage" hidden>
+        <div class="side me" id="me">
+          <div class="bars"><div class="nm"><b>Setzer</b><span data-i="you"></span></div><div class="hpbar"><i id="php"></i></div><div class="hpt"><span data-i="hp"></span> <b id="phpt">100 / 100</b></div></div>
+          <div class="sprite idle" id="mesprite"></div>
+        </div>
+        <div class="side enemy" id="foe">
+          <div class="bars"><div class="nm" id="fname"></div><div class="hpbar enemy"><i id="fhp"></i></div><div class="hpt"><span data-i="hp"></span> <b id="fhpt"></b> · <span class="atk" id="fatk"></span></div></div>
+          <div class="sprite idle" id="foesprite"></div>
+        </div>
+        <div class="fx" id="fx"></div>
       </div>
-      <div class="tray"><div class="board" id="board" aria-label="กระดานตัวอักษร"></div></div>
+      <div class="tray" id="tray"><div class="board" id="board"></div></div>
       <div class="stick">
-        <div class="word" id="wordbox"><span class="w" id="word">แตะหรือลากตัวอักษร</span><span class="pts" id="pts"></span></div>
+        <div class="word" id="wordbox"><span class="w" id="word"></span><span class="pts" id="pts"></span></div>
         <div class="btns">
-          <button class="primary" id="submit" disabled>ส่งคำ <small>Setzen</small></button>
-          <button id="clear">ล้าง</button>
-          <button id="hint">ใบ้ <small id="hintn">(3)</small></button>
-          <button id="shuffle">สลับตัวอักษร</button>
+          <button class="primary" id="submit" disabled><span data-i="submit"></span> <small>Setzen</small></button>
+          <button id="clear" data-i="clear"></button>
+          <button id="hint"><span data-i="hint"></span> <small id="hintcost"></small></button>
+          <button id="shuffle" data-i="shuffle"></button>
         </div>
       </div>
     </section>
     <aside class="proof">
       <div class="dhead"><h2>Wörterbuch</h2>
-        <div class="langs" role="group" aria-label="ภาษาคำแปล"><button data-l="th" aria-pressed="true">ไทย</button><button data-l="en" aria-pressed="false">EN</button><button data-l="nl" aria-pressed="false">NL</button></div></div>
-      <p class="sub" id="chapinfo">บทที่ 1: ทำให้ได้ 1000 คะแนนเพื่อไปบทต่อไป</p>
-      <div class="recent" id="lastbox"><div class="empty">คำที่คุณสร้างจะแสดงที่นี่ พร้อมเพศของคำนาม (der/die/das) และคำแปลตามภาษาที่เลือก</div></div>
+        <div class="langs" id="dictlangs" role="group"><button data-l="th">ไทย</button><button data-l="en">EN</button><button data-l="nl">NL</button></div></div>
+      <p class="sub" id="chapinfo"></p>
+      <div class="recent" id="lastbox"></div>
       <ul class="log" id="log"></ul>
       <details class="rules" id="rules">
-        <summary>วิธีเล่น</summary>
-        <ul>
-          <li>เลือกตัวอักษรที่อยู่ติดกัน (รวมแนวทแยง) อย่างน้อย 3 ตัว ให้เป็นคำภาษาเยอรมัน แล้วกด <b>ส่งคำ</b> หรือลากแล้วปล่อยนิ้ว</li>
-          <li>คำยาวได้คะแนนคูณเพิ่ม ตัวอักษรหายาก (Ä Ö Ü J Q X Y) มีค่าสูง ป้าย <b>CH</b> นับเป็นสองตัวอักษร</li>
-          <li>ใช้ <b>ss</b> แทน ß เช่น STRASSE, FUSS</li>
-          <li>คำ 5–6 ตัวจะได้ป้าย <span class="chip r">×2</span> สีแดงชาด คำ 7 ตัวขึ้นไปได้ป้าย <span class="chip g">×3</span> แผ่นทอง ใช้ในคำถัดไปเพื่อคูณคะแนน</li>
-          <li>ระวัง <span class="chip k">หยดหมึก</span> ตัวเลขบนป้ายจะนับถอยหลังทุกตา ถ้าถึง 0 คุณเสียขนนก 1 อัน ใช้ป้ายนั้นในคำเพื่อกำจัดและได้โบนัส</li>
-          <li>การสลับตัวอักษรนับเป็นหนึ่งตา ผ่านบทแล้วได้ขนนกคืน 1 อันและคำใบ้ครบ 3 ครั้ง</li>
-          <li><b>โหมดต่อสู้:</b> คะแนนของคำกลายเป็นดาเมจ (คะแนน ÷ 10) ศัตรูนับถอยหลังแล้วโจมตีกลับ ด่านยิ่งสูงยิ่งตีแรงและถี่ขึ้น ใช้ป้าย <span class="chip h">+HP</span> สีเขียวในคำเพื่อฟื้นเลือด และป้าย <span class="chip r">×2</span> เพื่อเพิ่มดาเมจ ชนะแล้วได้เลือดคืน 20 และคำใบ้ครบ 3 ครั้ง</li>
-        </ul>
+        <summary data-i="howto"></summary>
+        <ul id="ruleslist"></ul>
       </details>
     </aside>
   </div>
 </div>
-<div class="overlay" id="over" hidden><div class="card"><h3 id="ovt">Ende</h3><div id="ovb"></div><button id="again">เล่นใหม่</button></div></div>
+<div class="overlay" id="over" hidden><div class="card" role="dialog" aria-modal="true" aria-labelledby="ovt"><h3 id="ovt"></h3><div id="ovb"></div><button id="again"></button></div></div>
 
 <script>
 /*DATA*/
@@ -221,125 +253,209 @@ button small{font-weight:400;opacity:.75}
 (function(){
 const COLS=7,ROWS=7;
 const DICT=new Set(WORDS.split(' '));
-// trie for hint search
 const TRIE={};
 for(const w of DICT){let n=TRIE;for(const c of w){n=n[c]||(n[c]={});}n.$=1;}
 const VAL={e:1,n:1,s:1,i:1,r:1,t:1,u:1,a:1,d:1,h:2,g:2,l:2,o:2,m:3,b:3,w:3,z:3,c:4,f:4,k:4,p:4,ch:4,'ä':6,j:6,'ü':6,v:6,'ö':8,x:8,q:10,y:10};
-// German letter frequencies (per mille), C mostly lives inside the CH sort
+// German letter frequencies (per mille); C mostly lives inside the CH sort
 const FREQ={e:150,n:90,i:72,s:68,r:66,a:64,t:58,d:46,h:36,u:40,l:34,g:28,o:30,m:25,b:19,w:17,f:16,k:14,z:11,p:9,v:7,ch:22,c:3,'ü':6,'ä':5,'ö':4,j:3,y:1,x:1,q:1};
 const VOW=new Set(['a','e','i','o','u','ä','ö','ü']);
 const LMULT=[0,0,0,1,1.25,1.5,2,2.5,3,3.5,4,4.5,5];
+const HINT_HP=3,HINT_PTS=50;
 let pool=[];for(const k in FREQ)for(let i=0;i<FREQ[k];i++)pool.push(k);
+
+// ---------- storage ----------
+const MEM={};
+function sget(k,d){if(k in MEM)return MEM[k];try{const v=localStorage.getItem(k);return v===null?d:v;}catch(e){return d;}}
+function sset(k,v){MEM[k]=String(v);try{localStorage.setItem(k,v);}catch(e){}}
+let userTr={};try{userTr=JSON.parse(sget('setzkasten-usertr','{}'))||{};}catch(e){userTr={};}
+
+// ---------- i18n ----------
+const I18N={
+th:{changeMode:'เปลี่ยนโหมด',score:'คะแนน',chapter:'บท (Kapitel)',stage:'ด่าน (Stufe)',lives:'ขนนก (ชีวิต)',best:'สถิติสูงสุด',you:'คุณ',hp:'เลือด',
+ tap:'แตะหรือลากตัวอักษร',notword:'ไม่พบคำนี้',submit:'ส่งคำ',clear:'ล้าง',hint:'ใบ้',shuffle:'สลับตัวอักษร',howto:'วิธีเล่น',
+ tagC:'โหมดคลาสสิก: ลากต่อตัวอักษรให้เป็นคำภาษาเยอรมัน',tagB:'โหมดต่อสู้: ใช้คำโจมตีศัตรู',
+ dictEmpty:'คำที่คุณสร้างจะแสดงที่นี่ พร้อมเพศของคำนาม (der/die/das) และคำแปล',
+ chapInfo:'บทที่ {c}: {s} / {t} คะแนน เพื่อไปบทต่อไป',stageInfo:'ด่าน {c}: สู้กับ {n}',
+ atkNext:'โจมตีตาหน้า! ({a})',atkIn:'โจมตีในอีก {n} ตา ({a})',dmgUnit:'ดาเมจ',
+ noTr:'ยังไม่มีคำแปลภาษาไทย',addTr:'+ เพิ่มคำแปลภาษาไทย',fromPlayer:'จากผู้เล่น',edit:'แก้ไข',save:'บันทึก',cancel:'ยกเลิก',trPh:'พิมพ์คำแปลของ {w}',
+ inkLost:'หยดหมึกซึมลงกระดาษ เสียขนนก {n} อัน',foeHits:'{n} โจมตี! เสียเลือด {a}',
+ hintToast:'ลองหาคำที่ขึ้นต้นด้วย {l} ตรงป้ายที่กระดิก ({n} ป้าย)',noWords:'ไม่มีคำบนกระดาน กำลังสลับให้ใหม่',hintLow:'เลือดเหลือน้อยเกินไป ใช้คำใบ้ไม่ได้',hintPts:'คะแนนไม่พอสำหรับคำใบ้',
+ cfShuffleT:'สลับตัวอักษร?',cfShuffleB:'การสลับตัวอักษรจะข้ามเทิร์นของคุณ ถ้าถึงตาศัตรู ศัตรูจะโจมตีคุณ',cfShuffleWarn:'ศัตรูจะโจมตีในเทิร์นนี้ ({a})',
+ cfShuffleC:'การสลับตัวอักษรนับเป็นหนึ่งตา หยดหมึกทุกหยดจะนับถอยหลังลง 1',
+ cfHintT:'ใช้คำใบ้?',cfHintB:'คำใบ้ใช้ได้ไม่จำกัด แต่ทุกครั้งจะเสียเลือด {n}',cfHintC:'คำใบ้ใช้ได้ไม่จำกัด แต่ทุกครั้งจะเสีย {n} คะแนน',
+ dontAsk:'ไม่ต้องถามอีก',confirm:'ยืนยัน',
+ pickT:'Spielmodus',pickB:'เลือกภาษาและแบบเกม',modeC:'โหมดคลาสสิก: ทำคะแนนให้ถึงเป้าเพื่อผ่านบท ระวังหยดหมึก',modeB:'โหมดต่อสู้: คะแนนกลายเป็นดาเมจ ล้มศัตรูทีละด่าน ป้าย +HP ฟื้นเลือด ป้าย ×2 เพิ่มดาเมจ',back:'กลับไปเล่นต่อ',
+ chapT:'Kapitel {c}',chapB:'<p>ผ่านบทที่ {p} แล้ว!</p><p>ได้ขนนกคืน 1 อัน</p><p>บทนี้หยดหมึกจะมาบ่อยขึ้นและนับถอยหลังเร็วขึ้น</p>',go:'ไปต่อ',
+ winB:'<p>ชนะ <b>{o}</b> แล้ว!</p><p>ได้เลือดคืน 20</p><p>ด่าน {c}: <b>{n}</b> เลือด {h} · ตีครั้งละ {a} ทุก {e} ตา</p>',fight:'สู้ต่อ',
+ overB:'<p>คะแนนรวม</p><div class="big">{s}</div><p>{where} · สร้างได้ {n} คำ</p>',reachedC:'ถึงบทที่ {c}',reachedB:'ถึงด่านที่ {c} ({n})',bestW:'<p>คำที่ดีที่สุด: <b>{w}</b> ({p})</p>',again:'เล่นใหม่',
+ rules:['เลือกตัวอักษรที่อยู่ติดกัน (รวมแนวทแยง) อย่างน้อย 3 ตัว ให้เป็นคำภาษาเยอรมัน แล้วกด <b>ส่งคำ</b> หรือลากแล้วปล่อยนิ้ว','คำยาวได้คะแนนคูณเพิ่ม ตัวอักษรหายาก (Ä Ö Ü J Q X Y) มีค่าสูง ป้าย <b>CH</b> นับเป็นสองตัวอักษร','ใช้ <b>ss</b> แทน ß เช่น STRASSE, FUSS','คำ 5–6 ตัวได้ป้าย <span class="chip r">×2</span> คำ 7 ตัวขึ้นไปได้ป้าย <span class="chip g">×3</span> ใช้ในคำถัดไปเพื่อคูณคะแนน','<b>คลาสสิก:</b> ระวัง <span class="chip k">หยดหมึก</span> ที่นับถอยหลัง ถ้าถึง 0 เสียขนนก 1 อัน','<b>ต่อสู้:</b> คะแนน ÷ 10 = ดาเมจ ศัตรูนับถอยหลังแล้วตีกลับ ด่านยิ่งสูงยิ่งตีแรง ป้าย <span class="chip h">+HP</span> ฟื้นเลือด','การสลับตัวอักษรนับเป็นหนึ่งตา คำใบ้ใช้ได้ไม่จำกัด แต่เสียเลือด 3 (คลาสสิกเสีย 50 คะแนน)','ถ้าคำไหนยังไม่มีคำแปล กดเพิ่มคำแปลเองได้ จะบันทึกไว้ในเครื่องนี้'],
+ foe:['หยดหมึกจอมซน','เหาหนังสือ','ปีศาจคำพิมพ์ผิด','เสือกระดาษ','โกเลมสนิม','อักษรเงา','ผู้ตรวจเซ็นเซอร์','มังกรตะกั่ว']},
+en:{changeMode:'Change mode',score:'Score',chapter:'Chapter (Kapitel)',stage:'Stage (Stufe)',lives:'Quills (lives)',best:'Best',you:'You',hp:'HP',
+ tap:'Tap or drag letters',notword:'Not a word',submit:'Submit',clear:'Clear',hint:'Hint',shuffle:'Shuffle',howto:'How to play',
+ tagC:'Classic: link letters into German words',tagB:'Battle: attack enemies with words',
+ dictEmpty:'Words you make appear here with noun gender (der/die/das) and a translation',
+ chapInfo:'Chapter {c}: {s} / {t} points to the next chapter',stageInfo:'Stage {c}: fighting {n}',
+ atkNext:'Attacks next turn! ({a})',atkIn:'Attacks in {n} turns ({a})',dmgUnit:'damage',
+ noTr:'No English translation yet',addTr:'+ Add an English translation',fromPlayer:'from a player',edit:'Edit',save:'Save',cancel:'Cancel',trPh:'Type the meaning of {w}',
+ inkLost:'Ink soaked through: you lost {n} quill(s)',foeHits:'{n} attacks! You lose {a} HP',
+ hintToast:'Look for a word starting with {l} on the wiggling tiles ({n} tiles)',noWords:'No words on the board, shuffling',hintLow:'Not enough HP for a hint',hintPts:'Not enough points for a hint',
+ cfShuffleT:'Shuffle the letters?',cfShuffleB:'Shuffling skips your turn. If the enemy\'s countdown runs out, it attacks you.',cfShuffleWarn:'The enemy will attack this turn ({a})',
+ cfShuffleC:'Shuffling counts as a turn. Every ink blot counts down by 1.',
+ cfHintT:'Use a hint?',cfHintB:'Hints are unlimited, but each one costs {n} HP.',cfHintC:'Hints are unlimited, but each one costs {n} points.',
+ dontAsk:'Don\'t ask me again',confirm:'Confirm',
+ pickT:'Spielmodus',pickB:'Choose your language and game mode',modeC:'Classic: reach the target score to finish each chapter. Watch out for ink blots.',modeB:'Battle: your score becomes damage. Defeat one enemy per stage. +HP tiles heal, ×2 tiles hit harder.',back:'Back to the game',
+ chapT:'Kapitel {c}',chapB:'<p>Chapter {p} complete!</p><p>You got a quill back.</p><p>Ink blots now come more often and count down faster.</p>',go:'Continue',
+ winB:'<p>You defeated <b>{o}</b>!</p><p>You recover 20 HP.</p><p>Stage {c}: <b>{n}</b>, {h} HP, hits for {a} every {e} turns</p>',fight:'Fight on',
+ overB:'<p>Total score</p><div class="big">{s}</div><p>{where} · {n} words made</p>',reachedC:'Reached chapter {c}',reachedB:'Reached stage {c} ({n})',bestW:'<p>Best word: <b>{w}</b> ({p})</p>',again:'Play again',
+ rules:['Pick at least 3 touching letters (diagonals count) that form a German word, then press <b>Submit</b> or drag and let go.','Longer words multiply your score. Rare letters (Ä Ö Ü J Q X Y) are worth more. The <b>CH</b> tile counts as two letters.','Write <b>ss</b> for ß, e.g. STRASSE, FUSS.','5–6 letter words create a <span class="chip r">×2</span> tile, 7+ letters a <span class="chip g">×3</span> tile. Use them in your next word.','<b>Classic:</b> <span class="chip k">ink blots</span> count down. At 0 you lose a quill.','<b>Battle:</b> score ÷ 10 = damage. Enemies count down and hit back, harder each stage. <span class="chip h">+HP</span> tiles heal you.','Shuffling counts as a turn. Hints are unlimited but cost 3 HP (50 points in Classic).','Missing a translation? Add your own. It is saved on this device.'],
+ foe:['mischievous ink blot','book louse','typo devil','paper tiger','rust golem','shadow script','censor','lead dragon']},
+nl:{changeMode:'Modus wijzigen',score:'Score',chapter:'Hoofdstuk (Kapitel)',stage:'Level (Stufe)',lives:'Veren (levens)',best:'Record',you:'Jij',hp:'HP',
+ tap:'Tik of sleep letters',notword:'Geen woord',submit:'Inzetten',clear:'Wissen',hint:'Hint',shuffle:'Schudden',howto:'Spelregels',
+ tagC:'Klassiek: verbind letters tot Duitse woorden',tagB:'Gevecht: val vijanden aan met woorden',
+ dictEmpty:'Je woorden verschijnen hier met lidwoord (der/die/das) en vertaling',
+ chapInfo:'Hoofdstuk {c}: {s} / {t} punten tot het volgende hoofdstuk',stageInfo:'Level {c}: gevecht met {n}',
+ atkNext:'Valt volgende beurt aan! ({a})',atkIn:'Valt aan over {n} beurten ({a})',dmgUnit:'schade',
+ noTr:'Nog geen Nederlandse vertaling',addTr:'+ Nederlandse vertaling toevoegen',fromPlayer:'van een speler',edit:'Bewerken',save:'Opslaan',cancel:'Annuleren',trPh:'Typ de betekenis van {w}',
+ inkLost:'De inkt is doorgelopen: {n} veer/veren kwijt',foeHits:'{n} valt aan! Je verliest {a} HP',
+ hintToast:'Zoek een woord dat begint met {l} op de wiebelende tegels ({n} tegels)',noWords:'Geen woorden op het bord, er wordt geschud',hintLow:'Te weinig HP voor een hint',hintPts:'Te weinig punten voor een hint',
+ cfShuffleT:'Letters schudden?',cfShuffleB:'Schudden slaat je beurt over. Is het aftellen van de vijand op, dan valt hij je aan.',cfShuffleWarn:'De vijand valt deze beurt aan ({a})',
+ cfShuffleC:'Schudden telt als een beurt. Elke inktvlek telt 1 af.',
+ cfHintT:'Hint gebruiken?',cfHintB:'Hints zijn onbeperkt, maar elke hint kost {n} HP.',cfHintC:'Hints zijn onbeperkt, maar elke hint kost {n} punten.',
+ dontAsk:'Niet meer vragen',confirm:'Bevestigen',
+ pickT:'Spielmodus',pickB:'Kies je taal en spelmodus',modeC:'Klassiek: haal de doelscore om elk hoofdstuk te halen. Pas op voor inktvlekken.',modeB:'Gevecht: je score wordt schade. Versla per level één vijand. +HP-tegels genezen, ×2-tegels slaan harder.',back:'Terug naar het spel',
+ chapT:'Kapitel {c}',chapB:'<p>Hoofdstuk {p} gehaald!</p><p>Je krijgt een veer terug.</p><p>Inktvlekken komen nu vaker en tellen sneller af.</p>',go:'Verder',
+ winB:'<p>Je hebt <b>{o}</b> verslagen!</p><p>Je herstelt 20 HP.</p><p>Level {c}: <b>{n}</b>, {h} HP, slaat {a} elke {e} beurten</p>',fight:'Verder vechten',
+ overB:'<p>Totale score</p><div class="big">{s}</div><p>{where} · {n} woorden gemaakt</p>',reachedC:'Hoofdstuk {c} bereikt',reachedB:'Level {c} bereikt ({n})',bestW:'<p>Beste woord: <b>{w}</b> ({p})</p>',again:'Opnieuw spelen',
+ rules:['Kies minstens 3 aangrenzende letters (ook diagonaal) die een Duits woord vormen en druk op <b>Inzetten</b>, of sleep en laat los.','Langere woorden vermenigvuldigen je score. Zeldzame letters (Ä Ö Ü J Q X Y) zijn meer waard. De <b>CH</b>-tegel telt als twee letters.','Schrijf <b>ss</b> voor ß, bijv. STRASSE, FUSS.','Woorden van 5–6 letters maken een <span class="chip r">×2</span>-tegel, 7+ letters een <span class="chip g">×3</span>-tegel. Gebruik ze in je volgende woord.','<b>Klassiek:</b> <span class="chip k">inktvlekken</span> tellen af. Bij 0 verlies je een veer.','<b>Gevecht:</b> score ÷ 10 = schade. Vijanden tellen af en slaan terug, elk level harder. <span class="chip h">+HP</span>-tegels genezen je.','Schudden telt als een beurt. Hints zijn onbeperkt maar kosten 3 HP (50 punten in Klassiek).','Ontbreekt een vertaling? Voeg je eigen toe. Die wordt op dit apparaat bewaard.'],
+ foe:['ondeugende inktvlek','boekenluis','zetduivel','papieren tijger','roestgolem','schaduwschrift','censor','loden draak']}};
+const LIDX={th:1,en:2,nl:3};
+let lang=sget('setzkasten-lang','th');if(!I18N[lang])lang='th';
+function t(k,v){let s=I18N[lang][k];if(s===undefined)s=I18N.th[k];if(typeof s==='string'&&v)s=s.replace(/\{(\w+)\}/g,(m,x)=>v[x]!==undefined?v[x]:m);return s;}
 
 const $=id=>document.getElementById(id);
 const boardEl=$('board');
-let grid,sel,score,chap,chapScore,lives,hints,uid,best=0,found,moves,busy=false;
+let grid,sel=[],score,chap,chapScore,lives,uid,best=0,found=[],moves,busy=false;
 let mode='classic',php=100,pmax=100,foe=null;
-function bestKey(){return mode==='battle'?'setzkasten-best-battle':'setzkasten-best';}
-function loadBest(){try{best=+localStorage.getItem(bestKey())||0}catch(e){best=0}}
-// enemies of the print shop; stats scale with the stage number
+function battle(){return mode==='battle';}
+function bestKey(){return battle()?'setzkasten-best-battle':'setzkasten-best';}
+function loadBest(){best=+sget(bestKey(),0)||0;}
+
+// ---------- characters ----------
 const FOES=[
- {de:'Tintenklecks',th:'หยดหมึกจอมซน',c:'#3b3f6b',f:'blob'},
- {de:'Bücherlaus',th:'เหาหนังสือ',c:'#8a7a52',f:'bug'},
- {de:'Druckfehlerteufel',th:'ปีศาจคำพิมพ์ผิด',c:'#a3352a',f:'horns'},
- {de:'Papiertiger',th:'เสือกระดาษ',c:'#d8c49a',f:'stripes'},
- {de:'Rostgolem',th:'โกเลมสนิม',c:'#9a5a32',f:'square'},
- {de:'Schattenschrift',th:'อักษรเงา',c:'#4b4553',f:'ghost'},
- {de:'Zensor',th:'ผู้ตรวจเซ็นเซอร์',c:'#55606b',f:'crown'},
- {de:'Bleidrache',th:'มังกรตะกั่ว',c:'#6b7378',f:'horns'}];
-function foeStats(s){return{hp:50+35*(s-1)+6*(s-1)*(s-1),atk:5+3*(s-1),every:s<=2?3:s<=6?2:2};}
+ {de:'Tintenklecks',c:'#3b3f6b',f:'blob'},{de:'Bücherlaus',c:'#8a7a52',f:'bug'},{de:'Druckfehlerteufel',c:'#a3352a',f:'horns'},{de:'Papiertiger',c:'#d8c49a',f:'stripes'},
+ {de:'Rostgolem',c:'#9a5a32',f:'square'},{de:'Schattenschrift',c:'#4b4553',f:'ghost'},{de:'Zensor',c:'#55606b',f:'crown'},{de:'Bleidrache',c:'#6b7378',f:'dragon'}];
+function foeStats(s){return{hp:50+35*(s-1)+6*(s-1)*(s-1),atk:5+3*(s-1),every:s<=2?3:2};}
 function foeSVG(k){
   const c=k.c,f=k.f;let body='',extra='';
-  if(f==='square')body='<rect x="12" y="14" width="40" height="40" rx="6" fill="'+c+'"/>';
+  if(f==='square')body='<rect x="12" y="14" width="40" height="40" rx="6" fill="'+c+'"/><path d="M16 22h6M42 46h6M18 48l4-3" stroke="#5e3218" stroke-width="2"/>';
   else if(f==='ghost')body='<path d="M12 56V30a20 20 0 0 1 40 0v26l-7-5-6 5-7-5-6 5-7-5z" fill="'+c+'"/>';
-  else if(f==='bug')body='<ellipse cx="32" cy="36" rx="18" ry="16" fill="'+c+'"/><path d="M14 30l-8-4M14 38H5M14 46l-8 4M50 30l8-4M50 38h9M50 46l8 4" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>';
-  else body='<path d="M32 10c14 0 22 10 22 24 0 14-9 22-22 22S10 48 10 34c0-6 3-9 7-10-1-8 6-14 15-14z" fill="'+c+'"/>';
-  if(f==='horns')extra='<path d="M18 22l-6-14 12 9zM46 22l6-14-12 9z" fill="#2a1d15"/>';
-  if(f==='stripes')extra='<path d="M14 30h8M14 38h7M50 30h-8M50 38h-7M30 12v6M36 12v6" stroke="#2a1d15" stroke-width="3" stroke-linecap="round"/>';
-  if(f==='crown')extra='<path d="M18 16l5-10 5 7 4-9 4 9 5-7 5 10z" fill="#c9a24a"/>';
-  return body+extra+'<circle cx="25" cy="32" r="5" fill="#f3ecdc"/><circle cx="39" cy="32" r="5" fill="#f3ecdc"/><circle cx="26" cy="33" r="2.3" fill="#1b1a1f"/><circle cx="40" cy="33" r="2.3" fill="#1b1a1f"/><path d="M24 44q8 5 16 0" stroke="#1b1a1f" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+  else if(f==='bug')body='<ellipse cx="32" cy="36" rx="18" ry="16" fill="'+c+'"/><path d="M14 30l-8-4M14 38H5M14 46l-8 4M50 30l8-4M50 38h9M50 46l8 4M26 20l-4-9M38 20l4-9" stroke="'+c+'" stroke-width="3" stroke-linecap="round"/>';
+  else if(f==='dragon')body='<path d="M32 10c14 0 22 10 22 24 0 14-9 22-22 22S10 48 10 34c0-14 8-24 22-24z" fill="'+c+'"/><path d="M52 30l10-8-3 12zM12 30L2 22l3 12z" fill="#4a5054"/><path d="M22 50l3 5 3-5 4 5 4-5 3 5 3-5" fill="#e9dfc9"/>';
+  else body='<path d="M32 10c14 0 22 10 22 24 0 14-9 22-22 22S10 48 10 34c0-6 3-9 7-10-1-8 6-14 15-14z" fill="'+c+'"/><circle cx="52" cy="54" r="3" fill="'+c+'"/><circle cx="10" cy="52" r="2" fill="'+c+'"/>';
+  if(f==='horns'||f==='dragon')extra+='<path d="M18 22l-6-14 12 9zM46 22l6-14-12 9z" fill="#2a1d15"/>';
+  if(f==='stripes')extra+='<path d="M14 30h8M14 38h7M50 30h-8M50 38h-7M30 12v6M36 12v6" stroke="#2a1d15" stroke-width="3" stroke-linecap="round"/>';
+  if(f==='crown')extra+='<path d="M18 16l5-10 5 7 4-9 4 9 5-7 5 10z" fill="#c9a24a"/><rect x="18" y="40" width="28" height="5" fill="#1b1a1f"/>';
+  return '<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="61" rx="18" ry="3" fill="rgba(0,0,0,.35)"/>'+body+extra+'<g class="eyes"><circle cx="25" cy="32" r="5" fill="#f3ecdc"/><circle cx="39" cy="32" r="5" fill="#f3ecdc"/><circle cx="24" cy="33" r="2.3" fill="#1b1a1f"/><circle cx="38" cy="33" r="2.3" fill="#1b1a1f"/><path d="M20 25l8 3M44 25l-8 3" stroke="#1b1a1f" stroke-width="2" stroke-linecap="round"/></g><path d="M24 45q8-4 16 0" stroke="#1b1a1f" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>';
 }
+// the player: a young typesetter in a folded paper hat, holding a composing stick
+const ME_SVG='<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="61" rx="16" ry="3" fill="rgba(0,0,0,.35)"/>'+
+ '<path d="M20 60V44c0-6 5-10 12-10s12 4 12 10v16z" fill="#3d5a73"/><path d="M24 60V42h16v18z" fill="#e9dfc9"/><path d="M24 42h16l-2-4H26z" fill="#e9dfc9"/>'+
+ '<circle cx="32" cy="26" r="11" fill="#e8b88f"/><path d="M21 22c2-6 7-9 11-9s9 3 11 9z" fill="#5a3b26"/>'+
+ '<path d="M17 19L32 4l15 15z" fill="#f3ecdc" stroke="#b9a888" stroke-width="1.2"/><path d="M22 14h20" stroke="#b9a888" stroke-width="1"/><text x="32" y="17" font-size="6" text-anchor="middle" fill="#b23a2b" font-family="Georgia,serif" font-weight="700">Ä</text>'+
+ '<circle cx="28" cy="27" r="1.6" fill="#1b1a1f"/><circle cx="36" cy="27" r="1.6" fill="#1b1a1f"/><path d="M29 32q3 2 6 0" stroke="#1b1a1f" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="25" cy="30" r="2" fill="#e79a7a" opacity=".6"/><circle cx="39" cy="30" r="2" fill="#e79a7a" opacity=".6"/>'+
+ '<g class="stick"><rect x="42" y="38" width="16" height="5" rx="1" fill="#9aa3a8" stroke="#5f676b" stroke-width="1"/><rect x="44" y="35" width="3" height="4" fill="#c9a24a"/><rect x="48" y="35" width="3" height="4" fill="#c9a24a"/><rect x="52" y="35" width="3" height="4" fill="#c9a24a"/></g>'+
+ '<circle cx="44" cy="44" r="3.5" fill="#e8b88f"/><circle cx="20" cy="46" r="3.5" fill="#e8b88f"/></svg>';
+function foeName(){return foe.de+(foe.lap?' '+'I'.repeat(foe.lap+1):'');}
+function foeSub(){return I18N[lang].foe[foe.k];}
 function spawnFoe(){
-  const k=FOES[(chap-1)%FOES.length],st=foeStats(chap);
-  const lap=Math.floor((chap-1)/FOES.length);
-  foe={...k,de:k.de+(lap?' '+'I'.repeat(lap+1):''),hp:st.hp,max:st.hp,atk:st.atk,every:st.every,cd:st.every};
-  $('foesvg').innerHTML=foeSVG(k);
+  const k=(chap-1)%FOES.length,st=foeStats(chap);
+  foe={...FOES[k],k,lap:Math.floor((chap-1)/FOES.length),hp:st.hp,max:st.hp,atk:st.atk,every:st.every,cd:st.every};
+  const sp=$('foesprite');sp.innerHTML=foeSVG(FOES[k]);sp.style.opacity='';sp.style.transform='';
+  sp.animate([{transform:'translateX(60px)',opacity:0},{transform:'none',opacity:1}],{duration:500,easing:'ease-out'});
 }
 
+// ---------- board ----------
 function tsize(){const w=Math.min(window.innerWidth-56,470);return Math.floor((w-(COLS-1)*6)/COLS);}
 let TS=tsize(),GAP=6;
 function layout(){TS=tsize();boardEl.style.setProperty('--ts',TS+'px');boardEl.style.width=(COLS*TS+(COLS-1)*GAP)+'px';boardEl.style.height=(ROWS*TS+(ROWS-1)*GAP)+'px';
-  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const t=grid[c][r];if(t)place(t,c,r);}}
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const tl=grid[c][r];if(tl)place(tl,c,r);}}
 function target(){return 1000+(chap-1)*500}
-function battle(){return mode==='battle';}
-
 function randLetter(){
-  let vc=0,n=0;for(const col of grid||[])for(const t of col)if(t){n++;if(VOW.has(t.l))vc++;}
+  let vc=0,n=0;for(const col of grid||[])for(const tl of col)if(tl){n++;if(VOW.has(tl.l))vc++;}
   if(n>10&&vc/n<0.3&&Math.random()<0.6){const v=['e','e','e','a','i','u','o','e','a','i'];return v[Math.random()*v.length|0];}
   if(n>10&&vc/n>0.5&&Math.random()<0.5){const v=['n','s','r','t','d','h','l','g'];return v[Math.random()*v.length|0];}
   return pool[Math.random()*pool.length|0];
 }
-function mkTile(l){const t={id:++uid,l:l||randLetter(),bonus:0,ink:0,heal:0,el:document.createElement('div')};t.el.className='tile';t.el.tabIndex=0;t.el.dataset.id=t.id;boardEl.appendChild(t.el);paint(t);return t;}
-function paint(t){
-  const L=t.l==='ch'?'CH':t.l.toUpperCase();
-  t.el.className='tile'+(t.l==='ch'?' ch':'')+(t.heal?' heal':'')+(t.bonus===2?' red':'')+(t.bonus===3?' gold':'')+(t.ink?' ink':'')+(t.ink&&t.ink<=2?' danger':'');
-  t.el.dataset.b=t.bonus?'×'+t.bonus:'';t.el.dataset.h=t.heal?'+'+t.heal:'';
-  t.el.innerHTML=(t.ink?'<span class="cd">'+t.ink+'</span>':'')+'<span class="l">'+L+'</span><span class="v">'+VAL[t.l]+'</span>';
-  t.el.setAttribute('aria-label',L+(t.ink?' หยดหมึก เหลือ '+t.ink+' ตา':'')+(t.bonus?' คูณ '+t.bonus:'')+(t.heal?' ฟื้นเลือด '+t.heal:''));
+function mkTile(l){const tl={id:++uid,l:l||randLetter(),bonus:0,ink:0,heal:0,el:document.createElement('div')};tl.el.className='tile';tl.el.tabIndex=0;tl.el.dataset.id=tl.id;boardEl.appendChild(tl.el);paint(tl);return tl;}
+function paint(tl){
+  const L=tl.l==='ch'?'CH':tl.l.toUpperCase();
+  tl.el.className='tile'+(tl.l==='ch'?' ch':'')+(tl.heal?' heal':'')+(tl.bonus===2?' red':'')+(tl.bonus===3?' gold':'')+(tl.ink?' ink':'')+(tl.ink&&tl.ink<=2?' danger':'');
+  tl.el.dataset.b=tl.bonus?'×'+tl.bonus:'';tl.el.dataset.h=tl.heal?'+'+tl.heal:'';
+  tl.el.innerHTML=(tl.ink?'<span class="cd">'+tl.ink+'</span>':'')+'<span class="l">'+L+'</span><span class="v">'+VAL[tl.l]+'</span>';
+  tl.el.setAttribute('aria-label',L+(tl.ink?' ink '+tl.ink:'')+(tl.bonus?' ×'+tl.bonus:'')+(tl.heal?' +'+tl.heal+' HP':''));
 }
-function decorate(t){
-  if(!battle()||t.bonus||t.heal)return;const r=Math.random();
-  if(r<0.07)t.heal=6+chap;else if(r<0.105)t.bonus=2;else return;paint(t);
+function decorate(tl){
+  if(!battle()||tl.bonus||tl.heal)return;const r=Math.random();
+  if(r<0.07)tl.heal=6+chap;else if(r<0.105)tl.bonus=2;else return;paint(tl);
 }
-function place(t,c,r){t.c=c;t.r=r;t.el.style.width=t.el.style.height=TS+'px';t.el.style.left=c*(TS+GAP)+'px';t.el.style.top=r*(TS+GAP)+'px';}
+function place(tl,c,r){tl.c=c;tl.r=r;tl.el.style.width=tl.el.style.height=TS+'px';tl.el.style.left=c*(TS+GAP)+'px';tl.el.style.top=r*(TS+GAP)+'px';}
 
 function newGame(m){
-  if(m)mode=m;try{localStorage.setItem('setzkasten-mode',mode)}catch(e){}loadBest();
-  boardEl.innerHTML='';uid=0;grid=null;sel=[];score=0;chap=1;chapScore=0;lives=3;hints=3;found=[];moves=0;
-  php=pmax=100;foe=null;if(battle())spawnFoe();
-  $('arena').hidden=!battle();$('progbox').hidden=battle();$('livesbox').hidden=battle();
-  $('chaplbl').textContent=battle()?'ด่าน (Stufe)':'บท (Kapitel)';
-  $('modename').textContent=battle()?'โหมดต่อสู้: ใช้คำโจมตีศัตรู':'โหมดคลาสสิก: ลากต่อตัวอักษรให้เป็นคำภาษาเยอรมัน';
+  if(m)mode=m;sset('setzkasten-mode',mode);loadBest();
+  boardEl.innerHTML='';uid=0;grid=null;sel=[];score=0;chap=1;chapScore=0;lives=3;found=[];moves=0;busy=false;
+  php=pmax=100;foe=null;$('fx').innerHTML='';
+  if(battle())spawnFoe();
+  $('stage').hidden=!battle();$('progbox').hidden=battle();$('livesbox').hidden=battle();
   grid=Array.from({length:COLS},()=>Array(ROWS).fill(null));
-  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const t=mkTile();grid[c][r]=t;decorate(t);}
-  layout();ensurePlayable();$('log').innerHTML='';$('lastbox').innerHTML='<div class="empty">คำที่คุณสร้างจะแสดงที่นี่ พร้อมเพศของคำนาม (der/die/das) และคำแปลตามภาษาที่เลือก</div>';
-  $('over').hidden=true;updateUI();renderDict();
+  for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++){const tl=mkTile();grid[c][r]=tl;decorate(tl);}
+  layout();ensurePlayable();
+  $('over').hidden=true;applyLang();
 }
 
-function wordOf(s){return s.map(t=>t.l).join('');}
+function wordOf(s){return s.map(x=>x.l).join('');}
 function adj(a,b){return a!==b&&Math.abs(a.c-b.c)<=1&&Math.abs(a.r-b.r)<=1;}
 function calc(s){
-  const w=wordOf(s);let base=0,mult=1;for(const t of s){base+=VAL[t.l];if(t.bonus)mult*=t.bonus;}
-  const len=Math.min(w.length,12);const inkB=s.filter(t=>t.ink).length;
+  const w=wordOf(s);let base=0,mult=1;for(const x of s){base+=VAL[x.l];if(x.bonus)mult*=x.bonus;}
+  const len=Math.min(w.length,12);const inkB=s.filter(x=>x.ink).length;
   return Math.round(base*LMULT[len]*mult*10)+inkB*50;
 }
 function dmgOf(p){return Math.max(1,Math.round(p/10));}
 function updateWord(){
   const w=wordOf(sel),ok=w.length>=3&&DICT.has(w);
-  $('word').textContent=sel.length?w.toUpperCase():'แตะหรือลากตัวอักษร';
+  $('word').textContent=sel.length?w.toUpperCase():t('tap');
   $('wordbox').classList.toggle('valid',ok);
-  if(ok&&battle()){const h=sel.reduce((a,t)=>a+t.heal,0);$('pts').textContent='⚔ '+dmgOf(calc(sel))+(h?' · +'+h+' HP':'');}
-  else $('pts').textContent=ok?'+'+calc(sel):(w.length>=3?'ไม่พบคำนี้':'');
+  if(ok&&battle()){const h=sel.reduce((a,x)=>a+x.heal,0);$('pts').textContent='⚔ '+dmgOf(calc(sel))+(h?' · +'+h+' HP':'');}
+  else $('pts').textContent=ok?'+'+calc(sel):(w.length>=3?t('notword'):'');
   $('submit').disabled=!ok||busy;
-  for(const col of grid)for(const t of col)if(t){t.el.classList.toggle('sel',sel.includes(t));t.el.classList.toggle('last',t===sel[sel.length-1]);}
+  for(const col of grid)for(const x of col)if(x){x.el.classList.toggle('sel',sel.includes(x));x.el.classList.toggle('last',x===sel[sel.length-1]);}
 }
 function updateUI(){
   $('score').textContent=score;$('chap').textContent=chap;$('best').textContent=Math.max(best,score);
   $('lives').innerHTML='✒'.repeat(lives)+'<span class="gone">'+'✒'.repeat(3-lives)+'</span>';
-  $('hintn').textContent='('+hints+')';$('hint').disabled=hints<=0;
+  $('hintcost').textContent=battle()?'(−'+HINT_HP+' HP)':'(−'+HINT_PTS+')';
   $('prog').style.width=Math.min(100,chapScore/target()*100)+'%';
   if(battle()&&foe){
-    $('chapinfo').textContent='ด่าน '+chap+': สู้กับ '+foe.de+' ('+foe.th+')';
+    $('chapinfo').textContent=t('stageInfo',{c:chap,n:foeName()+' ('+foeSub()+')'});
     $('php').style.width=(php/pmax*100)+'%';$('phpt').textContent=php+' / '+pmax;
     $('php').style.background=php/pmax<0.3?'var(--rubric)':php/pmax<0.6?'var(--brass)':'';
-    $('fname').innerHTML='<span class="de">'+foe.de+'</span>'+foe.th;
+    $('fname').innerHTML='<b>'+foeName()+'</b>'+esc(foeSub());
     $('fhp').style.width=(foe.hp/foe.max*100)+'%';$('fhpt').textContent=foe.hp+' / '+foe.max;
-    $('fatk').textContent=foe.cd<=1?'โจมตีตาหน้า! ('+foe.atk+')':'โจมตีในอีก '+foe.cd+' ตา ('+foe.atk+')';
-  } else $('chapinfo').textContent='บทที่ '+chap+': '+chapScore+' / '+target()+' คะแนน เพื่อไปบทต่อไป';
+    $('fatk').textContent=foe.cd<=1?t('atkNext',{a:foe.atk}):t('atkIn',{n:foe.cd,a:foe.atk});
+  } else $('chapinfo').textContent=t('chapInfo',{c:chap,s:chapScore,t:target()});
   updateWord();
 }
+function applyLang(){
+  document.documentElement.lang=lang;
+  for(const el of document.querySelectorAll('[data-i]'))el.textContent=t(el.dataset.i);
+  $('chaplbl').textContent=battle()?t('stage'):t('chapter');
+  $('modename').textContent=battle()?t('tagB'):t('tagC');
+  $('ruleslist').innerHTML=t('rules').map(r=>'<li>'+r+'</li>').join('');
+  for(const b of document.querySelectorAll('#dictlangs button'))b.setAttribute('aria-pressed',b.dataset.l===lang);
+  updateUI();renderDict();
+}
+function setLang(l){if(!I18N[l])return;lang=l;sset('setzkasten-lang',l);applyLang();}
 
-// ---- input ----
+// ---------- input ----------
 let drag=null;
 function tileAt(x,y,strict){
   const rb=boardEl.getBoundingClientRect();const fx=(x-rb.left)/(TS+GAP),fy=(y-rb.top)/(TS+GAP);
@@ -347,102 +463,179 @@ function tileAt(x,y,strict){
   if(strict){const dx=fx-c-TS/(TS+GAP)/2,dy=fy-r-TS/(TS+GAP)/2;if(Math.hypot(dx,dy)>0.4)return null;}
   return grid[c][r];
 }
-function tapTile(t){
-  const i=sel.indexOf(t);
-  if(i>=0){sel=sel.slice(0,i+ (i===sel.length-1?0:1));}
-  else if(!sel.length||adj(sel[sel.length-1],t))sel.push(t);
-  else sel=[t];
+function tapTile(x){
+  const i=sel.indexOf(x);
+  if(i>=0){sel=sel.slice(0,i+(i===sel.length-1?0:1));}
+  else if(!sel.length||adj(sel[sel.length-1],x))sel.push(x);
+  else sel=[x];
   updateWord();
 }
 boardEl.addEventListener('pointerdown',e=>{
-  if(busy)return;const t=tileAt(e.clientX,e.clientY,false);if(!t)return;
+  if(busy)return;const x=tileAt(e.clientX,e.clientY,false);if(!x)return;
   e.preventDefault();boardEl.setPointerCapture(e.pointerId);
-  drag={moved:false,start:t,wasLast:t===sel[sel.length-1]};
-  if(!sel.includes(t)){ if(!sel.length||adj(sel[sel.length-1],t))sel.push(t); else sel=[t]; drag.added=true; }
+  drag={moved:false,start:x,wasLast:x===sel[sel.length-1]};
+  if(!sel.includes(x)){if(!sel.length||adj(sel[sel.length-1],x))sel.push(x);else sel=[x];drag.added=true;}
   updateWord();
 });
 boardEl.addEventListener('pointermove',e=>{
-  if(!drag)return;const t=tileAt(e.clientX,e.clientY,true);if(!t)return;
-  const last=sel[sel.length-1];if(t===last)return;
-  if(sel.length>1&&t===sel[sel.length-2]){sel.pop();drag.moved=true;updateWord();return;}
-  if(!sel.includes(t)&&adj(last,t)){sel.push(t);drag.moved=true;updateWord();}
+  if(!drag)return;const x=tileAt(e.clientX,e.clientY,true);if(!x)return;
+  const last=sel[sel.length-1];if(x===last)return;
+  if(sel.length>1&&x===sel[sel.length-2]){sel.pop();drag.moved=true;updateWord();return;}
+  if(!sel.includes(x)&&adj(last,x)){sel.push(x);drag.moved=true;updateWord();}
 });
 function endDrag(){
   if(!drag)return;const d=drag;drag=null;
   if(d.moved){const w=wordOf(sel);if(w.length>=3&&DICT.has(w))submit();return;}
-  if(!d.added&&!d.moved){ // tap on already-selected tile
-    const i=sel.indexOf(d.start); if(d.wasLast)sel.pop(); else if(i>=0)sel=sel.slice(0,i+1);
-    updateWord();
-  }
+  if(!d.added){const i=sel.indexOf(d.start);if(d.wasLast)sel.pop();else if(i>=0)sel=sel.slice(0,i+1);updateWord();}
 }
 boardEl.addEventListener('pointerup',endDrag);boardEl.addEventListener('pointercancel',endDrag);
-boardEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const t=findById(e.target.dataset.id);if(t){e.preventDefault();tapTile(t);}}});
-function findById(id){for(const col of grid)for(const t of col)if(t&&t.id==id)return t;}
+boardEl.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const x=findById(e.target.dataset.id);if(x){e.preventDefault();tapTile(x);}}});
+function findById(id){for(const col of grid)for(const x of col)if(x&&x.id==id)return x;}
 document.addEventListener('keydown',e=>{
-  if(!$('over').hidden)return;
+  if(!$('over').hidden||e.target.tagName==='INPUT')return;
   if(e.key==='Enter'&&e.target===document.body&&!$('submit').disabled){submit();}
   else if(e.key==='Escape'){sel=[];updateWord();}
-  else if(e.key==='Backspace'&&e.target.tagName!=='INPUT'){sel.pop();updateWord();}
+  else if(e.key==='Backspace'){sel.pop();updateWord();}
 });
 $('submit').onclick=submit;
 $('clear').onclick=()=>{sel=[];updateWord();};
 $('hint').onclick=()=>{
-  if(hints<=0||busy)return;const path=findWord(5);if(!path){toast('ไม่มีคำบนกระดาน กำลังสลับให้ใหม่');shuffle(false);return;}
-  hints--;sel=[];updateUI();
-  for(const t of path){t.el.classList.remove('hint');void t.el.offsetWidth;t.el.classList.add('hint');}
-  toast('ลองหาคำที่ขึ้นต้นด้วย '+path[0].l.toUpperCase()+' ตรงป้ายที่กระดิก ('+path.length+' ป้าย)');
+  if(busy)return;
+  if(battle()&&php<=HINT_HP){toast(t('hintLow'));return;}
+  if(!battle()&&score<HINT_PTS){toast(t('hintPts'));return;}
+  confirmStep('hint',t('cfHintT'),'<p>'+(battle()?t('cfHintB',{n:HINT_HP}):t('cfHintC',{n:HINT_PTS}))+'</p>',doHint);
 };
-$('shuffle').onclick=()=>{if(!busy)shuffle(true);};
-$('again').onclick=()=>pickMode();
+function doHint(){
+  const path=findWord(5);if(!path){toast(t('noWords'));shuffle(false);return;}
+  if(battle()){php=Math.max(1,php-HINT_HP);floatText(sideAnchor('me'),'−'+HINT_HP,'hurt');}else score=Math.max(0,score-HINT_PTS);
+  sel=[];updateUI();
+  for(const x of path){x.el.classList.remove('hint');void x.el.offsetWidth;x.el.classList.add('hint');}
+  toast(t('hintToast',{l:path[0].l.toUpperCase(),n:path.length}));
+}
+$('shuffle').onclick=()=>{
+  if(busy)return;
+  const warn=battle()&&foe&&foe.cd<=1?'<p class="warn">'+t('cfShuffleWarn',{a:foe.atk})+'</p>':'';
+  confirmStep('shuffle',t('cfShuffleT'),'<p>'+(battle()?t('cfShuffleB'):t('cfShuffleC'))+'</p>'+warn,()=>shuffle(true));
+};
 $('modebtn').onclick=()=>pickMode(true);
+for(const b of document.querySelectorAll('#dictlangs button'))b.onclick=()=>setLang(b.dataset.l);
 
-// ---- game flow ----
-function submit(){
+// ---------- dialogs ----------
+function showOver(title,body,btn,fn){
+  $('ovt').textContent=title;$('ovb').innerHTML=body;$('again').hidden=!btn;
+  if(btn){$('again').textContent=btn;$('again').onclick=fn;}
+  $('over').hidden=false;(btn?$('again'):$('ovb').querySelector('button'))?.focus();
+}
+function closeOver(){$('over').hidden=true;}
+function confirmStep(key,title,body,fn){
+  if(sget('setzkasten-skip-'+key,'')==='1'){fn();return;}
+  showOver(title,body+'<label class="skip"><input type="checkbox" id="skipbox"> '+t('dontAsk')+'</label><div class="confirm-row"><button class="alt" id="cfno">'+t('cancel')+'</button><button id="cfyes">'+t('confirm')+'</button></div>',null,null);
+  $('cfno').onclick=closeOver;
+  $('cfyes').onclick=()=>{if($('skipbox').checked)sset('setzkasten-skip-'+key,'1');closeOver();fn();};
+  $('cfyes').focus();
+}
+function pickMode(cancelable){
+  const L=[['th','ไทย'],['en','English'],['nl','Nederlands']];
+  showOver(t('pickT'),'<p>'+t('pickB')+'</p><div class="uil"><div class="langs" role="group">'+L.map(([k,n])=>'<button data-ul="'+k+'" aria-pressed="'+(k===lang)+'">'+n+'</button>').join('')+'</div></div>'+
+    '<div class="modes"><button data-m="classic"><b>Klassisch</b><span>'+t('modeC')+'</span></button><button data-m="battle"><b>Kampf</b><span>'+t('modeB')+'</span></button>'+(cancelable?'<button data-m=""><span>'+t('back')+'</span></button>':'')+'</div>',null,null);
+  for(const b of $('ovb').querySelectorAll('[data-ul]'))b.onclick=()=>{setLang(b.dataset.ul);pickMode(cancelable);$('ovb').querySelector('[data-ul="'+b.dataset.ul+'"]').focus();};
+  for(const b of $('ovb').querySelectorAll('.modes button'))b.onclick=()=>{if(b.dataset.m)newGame(b.dataset.m);else closeOver();};
+}
+
+// ---------- battle effects ----------
+const reduced=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+function stageRect(){return $('stage').getBoundingClientRect();}
+function sideAnchor(id){const r=$(id==='me'?'mesprite':'foesprite').getBoundingClientRect(),s=stageRect();return{x:r.left-s.left+r.width/2,y:r.top-s.top+r.height/2};}
+function floatText(p,txt,cls){
+  const el=document.createElement('div');el.className='dmg '+(cls||'');el.textContent=txt;el.style.left=p.x+'px';el.style.top=(p.y-40)+'px';$('fx').appendChild(el);
+  el.animate([{transform:'translate(-50%,10px) scale(.6)',opacity:0},{transform:'translate(-50%,-6px) scale(1.15)',opacity:1,offset:.25},{transform:'translate(-50%,-40px) scale(1)',opacity:0}],{duration:1100,easing:'ease-out'}).onfinish=()=>el.remove();
+}
+function burst(p,colors,n){
+  if(reduced)return;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('div');s.className='spark';s.style.background=colors[i%colors.length];s.style.left=p.x+'px';s.style.top=p.y+'px';$('fx').appendChild(s);
+    const a=Math.random()*Math.PI*2,d=30+Math.random()*45;
+    s.animate([{transform:'translate(-50%,-50%) rotate(0)',opacity:1},{transform:'translate('+(Math.cos(a)*d-4)+'px,'+(Math.sin(a)*d-4)+'px) rotate('+(Math.random()*360)+'deg) scale(.4)',opacity:0}],{duration:500+Math.random()*300,easing:'cubic-bezier(.2,.7,.4,1)'}).onfinish=()=>s.remove();
+  }
+}
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+function anim(el,frames,opt){if(reduced)return Promise.resolve();return el.animate(frames,opt).finished.catch(()=>{});}
+async function playerAttack(word,dmg,crit,heal){
+  const me=$('mesprite'),fo=$('foesprite'),a=sideAnchor('me'),b=sideAnchor('foe');
+  if(heal){burst(a,['#a8e08a','#e9f7d9','#6fbf4f'],14);floatText({x:a.x,y:a.y-14},'+'+heal+' HP','heal');}
+  anim(me,[{transform:'none'},{transform:'translateX(18px) rotate(6deg)'},{transform:'none'}],{duration:350});
+  const letters=word.toUpperCase().replace('CH','\u0001').split('').map(c=>c==='\u0001'?'CH':c).slice(0,8);
+  const flights=letters.map((L,i)=>{
+    const p=document.createElement('div');p.className='proj'+(crit?' crit':'');p.textContent=L;$('fx').appendChild(p);
+    const y0=a.y-10+(i%3-1)*8,dy=b.y-y0;
+    return wait(i*55).then(()=>anim(p,[{transform:'translate('+(a.x-13)+'px,'+(y0-13)+'px) scale(.6)',opacity:0},{transform:'translate('+((a.x+b.x)/2-13)+'px,'+(y0+dy/2-60-13)+'px) rotate(180deg) scale(1)',opacity:1,offset:.5},{transform:'translate('+(b.x-13)+'px,'+(b.y-13)+'px) rotate(360deg) scale(.8)',opacity:1}],{duration:reduced?1:420,easing:'cubic-bezier(.3,.1,.5,1)'})).then(()=>p.remove());
+  });
+  await Promise.all(flights);
+  burst(b,crit?['#ffb35a','#ffe9a6','#e3742f','#fff']:['#ffd27a','#f3ecdc','#c9a24a'],crit?26:16);
+  floatText(b,'−'+dmg,crit?'crit':'');
+  anim(fo,[{filter:'brightness(3)',transform:'translateX(0)'},{filter:'brightness(1)',transform:'translateX(10px)'},{transform:'translateX(-6px)'},{transform:'none'}],{duration:380});
+  $('stage').classList.remove('shake');void $('stage').offsetWidth;if(crit)$('stage').classList.add('shake');
+  await wait(260);
+}
+async function enemyAttack(){
+  const me=$('mesprite'),fo=$('foesprite'),a=sideAnchor('me'),b=sideAnchor('foe');
+  await anim(fo,[{transform:'none'},{transform:'translateX(-22px) scale(1.08)'},{transform:'none'}],{duration:320});
+  const ball=document.createElement('div');ball.className='inkball';$('fx').appendChild(ball);
+  await anim(ball,[{transform:'translate('+(b.x-15)+'px,'+(b.y-15)+'px) scale(.5)'},{transform:'translate('+((a.x+b.x)/2-15)+'px,'+(a.y-70)+'px) scale(1.1)',offset:.5},{transform:'translate('+(a.x-15)+'px,'+(a.y-15)+'px) scale(1)'}],{duration:450,easing:'ease-in'});
+  ball.remove();burst(a,['#121016','#3b3f6b','#5b5670'],18);floatText(a,'−'+foe.atk,'hurt');
+  anim(me,[{filter:'brightness(.4) sepia(1) hue-rotate(-40deg) saturate(4)'},{filter:'none'}],{duration:450});
+  for(const el of [$('stage'),$('tray')]){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');}
+  if(!reduced){const sp=document.createElement('div');sp.className='splat';$('tray').style.position='relative';$('tray').appendChild(sp);sp.animate([{opacity:1},{opacity:1,offset:.6},{opacity:0}],{duration:1100}).onfinish=()=>sp.remove();}
+  await wait(200);
+}
+async function foeDies(){
+  const fo=$('foesprite'),b=sideAnchor('foe');
+  burst(b,['#f3ecdc','#e9dfc9','#b9a888','#1b1a1f'],30);
+  await anim(fo,[{transform:'none',opacity:1},{transform:'translateY(6px) rotate(-8deg) scale(1.05)',opacity:1,offset:.3},{transform:'translateY(30px) rotate(25deg) scale(.3)',opacity:0}],{duration:650,easing:'ease-in'});
+  fo.style.opacity='0';
+}
+
+// ---------- game flow ----------
+async function submit(){
   const w=wordOf(sel);if(busy||w.length<3||!DICT.has(w))return;
   busy=true;const pts=calc(sel),used=sel.slice();sel=[];
+  const crit=used.some(x=>x.bonus),heal=used.reduce((a,x)=>a+x.heal,0);
   score+=pts;chapScore+=pts;moves++;
-  // floating points
   const last=used[used.length-1];const p=document.createElement('div');p.className='pop';p.textContent='+'+pts;
   p.style.left=last.el.style.left;p.style.top=last.el.style.top;boardEl.appendChild(p);setTimeout(()=>p.remove(),1000);
   logWord(w,pts);
-  const anchor=used[used.length-1];
-  for(const t of used){grid[t.c][t.r]=null;t.el.remove();}
-  // reward tile for long words: reuse anchor column, placed where gravity lands it
-  let reward=w.length>=7?3:w.length>=5?2:0;
-  refill(reward,anchor.c,used.length<=3?0.18:0);
+  for(const x of used){grid[x.c][x.r]=null;x.el.remove();}
+  const reward=w.length>=7?3:w.length>=5?2:0;
+  refill(reward,last.c,used.length<=3?0.18:0);
+  updateWord();
   if(battle()){
-    const dmg=dmgOf(pts),heal=used.reduce((a,t)=>a+t.heal,0);
-    foe.hp=Math.max(0,foe.hp-dmg);floatAt('foe','-'+dmg);bump('foe');
-    if(heal){php=Math.min(pmax,php+heal);floatAt('me','+'+heal+' HP');}
-    busy=false;
-    if(foe.hp<=0){updateUI();return foeDefeated();}
-    enemyTurn();updateUI();checkOver();return;
+    const dmg=dmgOf(pts);
+    if(heal)php=Math.min(pmax,php+heal);
+    await playerAttack(w,dmg,crit,heal);
+    foe.hp=Math.max(0,foe.hp-dmg);updateUI();
+    if(foe.hp<=0){await foeDies();busy=false;return foeDefeated();}
+    await enemyTurn();busy=false;updateUI();checkOver();return;
   }
-  tick(used.length);
-  busy=false;updateUI();
-  if(chapScore>=target())nextChapter();
-  else checkOver();
+  tick();busy=false;updateUI();
+  if(chapScore>=target())nextChapter();else checkOver();
 }
-function floatAt(id,txt){const el=document.createElement('div');el.className='dmg';el.textContent=txt;$(id).appendChild(el);setTimeout(()=>el.remove(),1000);}
-function bump(id){const el=$(id);el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');}
-function enemyTurn(){
-  foe.cd--;
+async function enemyTurn(){
+  foe.cd--;updateUI();
   if(foe.cd<=0){
-    foe.cd=foe.every;php=Math.max(0,php-foe.atk);
-    floatAt('me','-'+foe.atk);bump('me');const tr=document.querySelector('.tray');tr.classList.remove('flash');void tr.offsetWidth;tr.classList.add('flash');
-    toast(foe.de+' โจมตี! เสียเลือด '+foe.atk);
+    foe.cd=foe.every;await enemyAttack();php=Math.max(0,php-foe.atk);
+    toast(t('foeHits',{n:foeName(),a:foe.atk}));updateUI();
   }
 }
 function foeDefeated(){
-  const old=foe;chap++;hints=3;php=Math.min(pmax,php+20);spawnFoe();updateUI();
+  const old=foeName()+' ('+foeSub()+')';chap++;php=Math.min(pmax,php+20);spawnFoe();updateUI();
   const st=foeStats(chap);
-  showOver('Sieg!','<p>ชนะ <b>'+old.de+'</b> ('+old.th+') แล้ว!</p><p>ได้เลือดคืน 20 และคำใบ้ครบ 3 ครั้ง</p><p>ด่าน '+chap+': <b>'+foe.de+'</b> เลือด '+st.hp+' · ตีครั้งละ '+st.atk+' ทุก '+st.every+' ตา</p>','สู้ต่อ',()=>{$('over').hidden=true;});
+  showOver('Sieg!',t('winB',{o:esc(old),c:chap,n:esc(foeName()),h:st.hp,a:st.atk,e:st.every}),t('fight'),closeOver);
 }
 function refill(reward,rc,extraInk){
   for(let c=0;c<COLS;c++){
     const keep=grid[c].filter(Boolean);const miss=ROWS-keep.length;const col=[];
-    for(let i=0;i<miss;i++){const t=mkTile();if(reward&&c===rc&&i===miss-1){t.bonus=reward;paint(t);reward=0;}else decorate(t);col.push(t);
-      t.el.style.width=t.el.style.height=TS+'px';t.el.style.left=c*(TS+GAP)+'px';t.el.style.top=(-(miss-i)*(TS+GAP))+'px';}
+    for(let i=0;i<miss;i++){const x=mkTile();if(reward&&c===rc&&i===miss-1){x.bonus=reward;paint(x);reward=0;}else decorate(x);col.push(x);
+      x.el.style.width=x.el.style.height=TS+'px';x.el.style.left=c*(TS+GAP)+'px';x.el.style.top=(-(miss-i)*(TS+GAP))+'px';}
     grid[c]=col.concat(keep);
   }
   void boardEl.offsetWidth;
@@ -451,91 +644,105 @@ function refill(reward,rc,extraInk){
 }
 function maybeInk(extra){
   if(battle())return;
-  let n=0;for(const col of grid)for(const t of col)if(t.ink)n++;
+  let n=0;for(const col of grid)for(const x of col)if(x.ink)n++;
   const cap=1+Math.floor(chap/2),p=0.06+0.04*chap+extra;
   if(n<cap&&moves>1&&Math.random()<p){
-    const cands=[];for(let c=0;c<COLS;c++)for(let r=0;r<2;r++){const t=grid[c][r];if(!t.ink&&!t.bonus)cands.push(t);}
-    const t=cands[Math.random()*cands.length|0];if(t){t.ink=Math.max(4,9-chap);paint(t);}
+    const cands=[];for(let c=0;c<COLS;c++)for(let r=0;r<2;r++){const x=grid[c][r];if(!x.ink&&!x.bonus)cands.push(x);}
+    const x=cands[Math.random()*cands.length|0];if(x){x.ink=Math.max(4,9-chap);paint(x);}
   }
 }
 function tick(){
   let lost=0;
-  for(const col of grid)for(const t of col)if(t.ink&&t.ink>0){t.ink--;if(t.ink<=0){lost++;t.ink=0;t.l=randLetter();t.el.animate([{filter:'brightness(3)'},{filter:'none'}],{duration:500});}paint(t);}
-  if(lost){lives=Math.max(0,lives-lost);toast('หยดหมึกซึมลงกระดาษ เสียขนนก '+lost+' อัน');}
+  for(const col of grid)for(const x of col)if(x.ink&&x.ink>0){x.ink--;if(x.ink<=0){lost++;x.ink=0;x.l=randLetter();x.el.animate([{filter:'brightness(3)'},{filter:'none'}],{duration:500});}paint(x);}
+  if(lost){lives=Math.max(0,lives-lost);toast(t('inkLost',{n:lost}));}
 }
-function shuffle(costsTurn){
-  const all=[];for(const col of grid)for(const t of col)all.push(t);
+async function shuffle(costsTurn){
+  if(busy)return;busy=true;
+  const all=[];for(const col of grid)for(const x of col)all.push(x);
   for(let i=all.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[all[i],all[j]]=[all[j],all[i]];}
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++)grid[c][r]=all[c*ROWS+r];
   sel=[];layout();ensurePlayable();
-  if(costsTurn){moves++;if(battle())enemyTurn();else{tick();maybeInk(0);}}
-  updateUI();checkOver();
+  if(costsTurn){moves++;if(battle())await enemyTurn();else{tick();maybeInk(0);}}
+  busy=false;updateUI();checkOver();
 }
 function ensurePlayable(){
-  let tries=0;while(!findWord(3)&&tries<20){ // swap a few random tiles for vowels/commons
-    for(let k=0;k<4;k++){const t=grid[Math.random()*COLS|0][Math.random()*ROWS|0];if(!t.ink&&!t.bonus){t.l=randLetter();paint(t);}}tries++;}
+  let tries=0;while(!findWord(3)&&tries<20){
+    for(let k=0;k<4;k++){const x=grid[Math.random()*COLS|0][Math.random()*ROWS|0];if(!x.ink&&!x.bonus&&!x.heal){x.l=randLetter();paint(x);}}tries++;}
 }
 function nextChapter(){
-  chap++;chapScore=0;lives=Math.min(3,lives+1);hints=3;
-  updateUI();
-  showOver('Kapitel '+chap,'<p>ผ่านบทที่ '+(chap-1)+' แล้ว!</p><p>ได้ขนนกคืน 1 อัน และคำใบ้ครบ 3 ครั้ง</p><p>บทนี้หยดหมึกจะมาบ่อยขึ้นและนับถอยหลังเร็วขึ้น</p>','ไปต่อ',()=>{$('over').hidden=true;});
+  chap++;chapScore=0;lives=Math.min(3,lives+1);updateUI();
+  showOver(t('chapT',{c:chap}),t('chapB',{p:chap-1}),t('go'),closeOver);
 }
 function checkOver(){
   if(battle()?php>0:lives>0)return;
-  if(score>best){best=score;try{localStorage.setItem('setzkasten-best',best)}catch(e){}}
+  if(score>best){best=score;sset(bestKey(),best);}
   const top=found.slice().sort((a,b)=>b.pts-a.pts)[0];
-  showOver(battle()?'Niederlage':'Ende','<p>คะแนนรวม</p><div class="big">'+score+'</div><p>ถึง'+(battle()?'ด่าน':'บท')+'ที่ '+chap+(battle()&&foe?' ('+foe.de+')':'')+' · สร้างได้ '+found.length+' คำ</p>'+(top?'<p>คำที่ดีที่สุด: <b>'+top.w.toUpperCase()+'</b> ('+top.pts+')</p>':''),'เล่นใหม่',newGame);
+  const where=battle()?t('reachedB',{c:chap,n:esc(foeName())}):t('reachedC',{c:chap});
+  showOver(battle()?'Niederlage':'Ende',t('overB',{s:score,where,n:found.length})+(top?t('bestW',{w:top.w.toUpperCase(),p:top.pts}):''),t('again'),()=>pickMode(false));
 }
-function showOver(t,b,btn,fn){$('ovt').textContent=t;$('ovb').innerHTML=b;$('again').hidden=!btn;if(btn){$('again').textContent=btn;$('again').onclick=fn;}$('over').hidden=false;(btn?$('again'):$('ovb').querySelector('button'))?.focus();}
-function pickMode(cancelable){
-  showOver('Spielmodus','<p>เลือกแบบเกม</p><div class="modes"><button data-m="classic"><b>Klassisch</b><span>โหมดคลาสสิก: ทำคะแนนให้ถึงเป้าเพื่อผ่านบท ระวังหยดหมึก</span></button><button data-m="battle"><b>Kampf</b><span>โหมดต่อสู้: คะแนนกลายเป็นดาเมจ ล้มศัตรูทีละด่าน มีป้าย +HP ฟื้นเลือด และ ×2 เพิ่มดาเมจ</span></button>'+(cancelable?'<button data-m=""><span>กลับไปเล่นต่อ</span></button>':'')+'</div>',null,null);
-  for(const b of $('ovb').querySelectorAll('.modes button'))b.onclick=()=>{if(b.dataset.m)newGame(b.dataset.m);else $('over').hidden=true;};
-}
-
 function findWord(minLen){
   let bestP=null;const seen=new Set();
-  function dfs(t,node,path){
-    let n=node;for(const ch of t.l){n=n[ch];if(!n)return;}
-    path.push(t);seen.add(t);
+  function dfs(x,node,path){
+    let n=node;for(const ch of x.l){n=n[ch];if(!n)return;}
+    path.push(x);seen.add(x);
     const w=wordOf(path);
     if(n.$&&w.length>=3){if(!bestP||w.length>wordOf(bestP).length)bestP=path.slice();}
-    if(path.length<8)for(let dc=-1;dc<=1;dc++)for(let dr=-1;dr<=1;dr++){const c=t.c+dc,r=t.r+dr;if(c<0||r<0||c>=COLS||r>=ROWS)continue;const u=grid[c][r];if(u&&!seen.has(u))dfs(u,n,path);}
-    path.pop();seen.delete(t);
+    if(path.length<8)for(let dc=-1;dc<=1;dc++)for(let dr=-1;dr<=1;dr++){const c=x.c+dc,r=x.r+dr;if(c<0||r<0||c>=COLS||r>=ROWS)continue;const u=grid[c][r];if(u&&!seen.has(u))dfs(u,n,path);}
+    path.pop();seen.delete(x);
   }
-  for(const col of grid)for(const t of col){if(t)dfs(t,TRIE,[]);if(bestP&&wordOf(bestP).length>=minLen)return bestP;}
+  for(const col of grid)for(const x of col){if(x)dfs(x,TRIE,[]);if(bestP&&wordOf(bestP).length>=minLen)return bestP;}
   return bestP;
 }
 
-// ---- dictionary panel ----
-function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-const LANGS={th:{i:1,name:'ไทย',none:'ยังไม่มีคำแปลภาษาไทย'},en:{i:2,name:'English',none:'No English translation yet'},nl:{i:3,name:'Nederlands',none:'Nog geen Nederlandse vertaling'}};
-let lang='th';try{const s=localStorage.getItem('setzkasten-lang');if(LANGS[s])lang=s;}catch(e){}
+// ---------- dictionary panel ----------
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 const nrm=s=>s.toLowerCase().replace(/ß/g,'ss');
+let editing=null;
+function trOf(w){
+  const g=GLOSS[w],own=g&&g[LIDX[lang]];
+  if(own)return{text:esc(own),user:false};
+  const u=userTr[lang]&&userTr[lang][w];
+  return u?{text:esc(u),user:true}:{text:'',user:false};
+}
 function display(w){
   const g=GLOSS[w];
-  if(!g)return{de:esc(w.toUpperCase()),tr:'',form:''};
+  if(!g)return{de:esc(w.toUpperCase()),form:''};
   const de=g[0].split(' / ').map(x=>{const m=x.match(/^(der|die|das) (.+)$/);return m?'<span class="art">'+m[1]+'</span> '+esc(m[2]):esc(x);}).join(' / ');
   const lem=g[0].split(' / ')[0].split(' ').pop();
-  const form=nrm(lem)!==w?w.toUpperCase():'';
-  return{de,tr:esc(g[LANGS[lang].i]||''),form};
+  return{de,form:nrm(lem)!==w?w.toUpperCase():''};
 }
+function trHTML(w,tr){return tr.text+(tr.user?' <span class="utr">('+t('fromPlayer')+')</span>':'');}
 function wikt(w){return 'https://de.wiktionary.org/wiki/Spezial:Suche?search='+encodeURIComponent(w);}
 function recentHTML(w){
-  const d=display(w);
-  return (d.form?'<div class="form">'+esc(d.form)+' →</div>':'')+'<div class="de">'+d.de+'</div>'+
-    (d.tr?'<div class="th" lang="'+lang+'">'+d.tr+'</div>':'<div class="no">'+LANGS[lang].none+' · <a href="'+wikt(w)+'" target="_blank" rel="noopener">Wiktionary</a></div>');
+  const d=display(w),tr=trOf(w);
+  let h=(d.form?'<div class="form">'+esc(d.form)+' →</div>':'')+'<div class="de">'+d.de+'</div>';
+  if(editing===w){
+    const cur=(userTr[lang]&&userTr[lang][w])||'';
+    h+='<form class="addtr" id="trform"><input id="trinput" maxlength="80" value="'+esc(cur)+'" placeholder="'+esc(t('trPh',{w:w.toUpperCase()}))+'" aria-label="'+esc(t('trPh',{w:w.toUpperCase()}))+'"><button class="save" type="submit">'+t('save')+'</button><button class="cancel" type="button" id="trcancel">'+t('cancel')+'</button></form>';
+  } else if(tr.text){
+    h+='<div class="th" lang="'+lang+'">'+trHTML(w,tr)+(tr.user?' <button class="lnk sm" id="tredit">'+t('edit')+'</button>':'')+'</div>';
+  } else {
+    h+='<div class="no">'+t('noTr')+' · <a href="'+wikt(w)+'" target="_blank" rel="noopener">Wiktionary</a></div><button class="lnk" id="tradd">'+t('addTr')+'</button>';
+  }
+  return h;
 }
-function liHTML(f){const d=display(f.w);return '<span class="de">'+(d.form?'<span class="fm">'+esc(d.form)+' → </span>':'')+d.de+'</span><span class="p">+'+f.pts+'</span>'+(d.tr?'<span class="th" lang="'+lang+'">'+d.tr+'</span>':'');}
+function liHTML(f){const d=display(f.w),tr=trOf(f.w);return '<span class="de">'+(d.form?'<span class="fm">'+esc(d.form)+' → </span>':'')+d.de+'</span><span class="p">+'+f.pts+'</span>'+(tr.text?'<span class="th" lang="'+lang+'">'+trHTML(f.w,tr)+'</span>':'');}
 function renderDict(){
-  if(found.length)$('lastbox').innerHTML=recentHTML(found[found.length-1].w);
+  const lb=$('lastbox');
+  if(found.length){
+    const w=found[found.length-1].w;lb.innerHTML=recentHTML(w);
+    const add=$('tradd')||$('tredit');if(add)add.onclick=()=>{editing=w;renderDict();$('trinput').focus();};
+    const f=$('trform');
+    if(f){f.onsubmit=e=>{e.preventDefault();const v=$('trinput').value.trim();(userTr[lang]=userTr[lang]||{});if(v)userTr[lang][w]=v;else delete userTr[lang][w];sset('setzkasten-usertr',JSON.stringify(userTr));editing=null;renderDict();};
+      $('trcancel').onclick=()=>{editing=null;renderDict();};}
+  } else lb.innerHTML='<div class="empty">'+t('dictEmpty')+'</div>';
   $('log').innerHTML=found.slice().reverse().map(f=>'<li>'+liHTML(f)+'</li>').join('');
-  for(const b of document.querySelectorAll('.langs button')){b.setAttribute('aria-pressed',b.dataset.l===lang);}
 }
-function logWord(w,pts){found.push({w,pts});renderDict();}
-for(const b of document.querySelectorAll('.langs button'))b.onclick=()=>{lang=b.dataset.l;try{localStorage.setItem('setzkasten-lang',lang)}catch(e){}renderDict();};
+function logWord(w,pts){found.push({w,pts});editing=null;renderDict();}
 let toastT;function toast(m){let el=document.querySelector('.toast');if(!el){el=document.createElement('div');el.className='toast';el.setAttribute('role','status');document.body.appendChild(el);}el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2800);}
 window.addEventListener('resize',()=>{if(grid)layout();});
-try{const m=localStorage.getItem('setzkasten-mode');if(m==='battle'||m==='classic')mode=m;}catch(e){}
-newGame();pickMode();
+$('mesprite').innerHTML=ME_SVG;
+{const m=sget('setzkasten-mode','classic');if(m==='battle'||m==='classic')mode=m;}
+newGame();pickMode(false);
 })();
 </script>

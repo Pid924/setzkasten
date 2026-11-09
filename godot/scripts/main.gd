@@ -2071,6 +2071,12 @@ func foe_defeated() -> void:
 	chap += 1
 	pmax += 20
 	php = min(pmax, php + 20)
+	# reward: one instant item and one attack item
+	var ra := randi() % 5
+	var rb := 5 + randi() % 5
+	inv[ra] += 1
+	inv[rb] += 1
+	var loot := item_name(ra) + ", " + item_name(rb)
 	spawn_foe()
 	update_ui()
 	sfx.play("win")
@@ -2078,12 +2084,12 @@ func foe_defeated() -> void:
 		if score > best:
 			best = score
 			set_setting(best_key(), best)
-		show_dialog("Gesamtsieg!", t("finalB", {"o": old, "s": score, "n": found.size(), "m": pmax}), [
+		show_dialog("Gesamtsieg!", t("finalB", {"o": old, "s": score, "n": found.size(), "m": pmax}) + "\n" + t("loot", {"i": loot}), [
 			[t("again"), func(): pick_mode(false), false],
 			[t("endless"), func(): self.endless = true; update_ui(); close_overlay(), true]])
 		return
 	var st := foe_stats(chap)
-	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "m": pmax, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every}), [[t("fight"), close_overlay, true]])
+	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "m": pmax, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every, "i": loot}), [[t("fight"), close_overlay, true]])
 
 
 func next_chapter() -> void:

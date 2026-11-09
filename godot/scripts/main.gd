@@ -15,9 +15,9 @@ const GAP := 6.0
 const HINT_HP := 3
 const HINT_PTS := 50
 const VAL := {"e": 1, "n": 1, "s": 1, "i": 1, "r": 1, "t": 1, "u": 1, "a": 1, "d": 1, "h": 2, "g": 2, "l": 2, "o": 2,
-	"m": 3, "b": 3, "w": 3, "z": 3, "c": 4, "f": 4, "k": 4, "p": 4, "ch": 4, "ä": 6, "j": 6, "ü": 6, "v": 6, "ö": 8, "x": 8, "q": 10, "y": 10}
+	"m": 3, "b": 3, "w": 3, "z": 3, "c": 4, "f": 4, "k": 4, "p": 4, "ch": 4, "ss": 3, "ä": 6, "j": 6, "ü": 6, "v": 6, "ö": 8, "x": 8, "q": 10, "y": 10}
 # German letter frequencies (per mille); C mostly lives inside the CH sort.
-const FREQ := {"e": 150, "n": 90, "i": 72, "s": 68, "r": 66, "a": 64, "t": 58, "d": 46, "h": 36, "u": 40, "l": 34, "g": 28,
+const FREQ := {"e": 150, "n": 90, "i": 72, "s": 60, "ss": 10, "r": 66, "a": 64, "t": 58, "d": 46, "h": 36, "u": 40, "l": 34, "g": 28,
 	"o": 30, "m": 25, "b": 19, "w": 17, "f": 16, "k": 14, "z": 11, "p": 9, "v": 7, "ch": 22, "c": 3, "ü": 6, "ä": 5, "ö": 4,
 	"j": 3, "y": 1, "x": 1, "q": 1}
 const VOWELS := ["a", "e", "i", "o", "u", "ä", "ö", "ü"]
@@ -1169,9 +1169,9 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 	if selected:
 		st = styles.tile_sel
 	x.node.add_theme_stylebox_override("panel", st)
-	var L: String = "CH" if x.l == "ch" else x.l.to_upper()
+	var L: String = x.l.to_upper()
 	x.letter.text = L
-	x.letter.add_theme_font_size_override("font_size", int(ts * (0.36 if x.l == "ch" else 0.5)))
+	x.letter.add_theme_font_size_override("font_size", int(ts * (0.36 if x.l.length() > 1 else 0.5)))
 	var dark: bool = x.ink > 0 and not selected
 	x.letter.add_theme_color_override("font_color", C_PAPER if dark else C_INK)
 	x.val.text = str(VAL[x.l])
@@ -1799,7 +1799,7 @@ func _hint_pick() -> void:
 	update_ui()
 	_wiggle(hint_path.slice(k + 1))
 	sfx.play("hint", 1.25)
-	toast(t("hintAuto", {"l": "CH" if hint_path[k].l == "ch" else hint_path[k].l.to_upper(), "n": hint_path.size() - k - 1}))
+	toast(t("hintAuto", {"l": hint_path[k].l.to_upper(), "n": hint_path.size() - k - 1}))
 
 
 func _do_hint() -> void:
@@ -1860,15 +1860,67 @@ func shuffle(costs_turn: bool) -> void:
 	check_over()
 
 
+const MIN_WORDS := 100
+
+
+## After new letters arrive, keep the board rich: at least MIN_WORDS different words must be findable.
+## Re-rolls plain letters (dead ones first) until that holds.
 func ensure_playable() -> void:
 	var tries := 0
-	while find_word(3).is_empty() and tries < 20:
-		for k in 4:
-			var x: Dictionary = grid[randi() % COLS][randi() % ROWS]
-			if not x.ink and not x.bonus and not x.heal:
-				x.l = rand_letter()
-				paint(x)
+	while tries < 15:
+		var n := count_words(MIN_WORDS)
+		if n >= MIN_WORDS:
+			return
+		var pool_tiles := []
+		var dead := dead_tiles() if n > 0 else []
+		for x in dead:
+			if not x.ink and not x.bonus and not x.heal and not x in sel:
+				pool_tiles.append(x)
+		if pool_tiles.size() < 4:
+			for col in grid:
+				for x in col:
+					if not x.ink and not x.bonus and not x.heal and not x in sel and not x in pool_tiles:
+						pool_tiles.append(x)
+		pool_tiles.shuffle()
+		for x in pool_tiles.slice(0, 6):
+			x.l = rand_letter()
+			paint(x, x in sel)
 		tries += 1
+
+
+## Number of different words on the board, stopping early once `limit` is reached.
+func count_words(limit: int) -> int:
+	var found_w := {}
+	for col in grid:
+		for x in col:
+			if x == null:
+				return limit
+			_dfs_count(x, "", {}, found_w, limit)
+			if found_w.size() >= limit:
+				return found_w.size()
+	return found_w.size()
+
+
+func _dfs_count(x: Dictionary, pre: String, seen: Dictionary, found_w: Dictionary, limit: int) -> void:
+	if found_w.size() >= limit:
+		return
+	var w: String = pre + x.l
+	if not has_prefix(w):
+		return
+	seen[x.id] = true
+	if w.length() >= 3 and word_set.has(w):
+		found_w[w] = true
+	if seen.size() < 8:
+		for dc in [-1, 0, 1]:
+			for dr in [-1, 0, 1]:
+				var c: int = x.c + dc
+				var r: int = x.r + dr
+				if c < 0 or r < 0 or c >= COLS or r >= ROWS:
+					continue
+				var u = grid[c][r]
+				if u and not seen.has(u.id):
+					_dfs_count(u, w, seen, found_w, limit)
+	seen.erase(x.id)
 
 
 func find_word(min_len: int) -> Array:

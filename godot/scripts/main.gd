@@ -131,6 +131,7 @@ var toast_lbl: Label
 var toast_tween: Tween
 var styles := {}
 var drag := {}
+var hint_tweens := []
 
 
 func _ready() -> void:
@@ -393,7 +394,7 @@ func _build_ui() -> void:
 		var v := VBoxContainer.new()
 		v.add_theme_constant_override("separation", 0)
 		p.add_child(v)
-		var cap := lbl("", 16, C_MUTED)
+		var cap := lbl("", 18, C_MUTED)
 		var val := lbl("0", 30, C_PAPER, f_sort)
 		v.add_child(cap)
 		v.add_child(val)
@@ -517,7 +518,7 @@ func _build_stage() -> void:
 		if not is_me:
 			bar.add_theme_stylebox_override("fill", box(C_RUBRIC, 5))
 		v.add_child(bar)
-		var hp := lbl("", 16, C_MUTED)
+		var hp := lbl("", 18, C_MUTED)
 		hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		hp.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(hp)
@@ -532,7 +533,7 @@ func _build_stage() -> void:
 	foe_name_lbl = b[1]
 	foe_hp = b[2]
 	foe_hp_lbl = b[3]
-	foe_atk_lbl = lbl("", 16, Color("ff8f7a"))
+	foe_atk_lbl = lbl("", 18, Color("ff8f7a"))
 	foe_atk_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	foe_atk_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foe_info.add_child(foe_atk_lbl)
@@ -560,7 +561,7 @@ func _build_dict() -> void:
 		b.add_theme_font_size_override("font_size", 18)
 		lb.add_child(b)
 		dict_lang_btns[l] = b
-	chapinfo = lbl("", 18, Color("6d6252"))
+	chapinfo = lbl("", 20, Color("6d6252"))
 	chapinfo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(chapinfo)
 	var rp := PanelContainer.new()
@@ -663,13 +664,18 @@ func _layout() -> void:
 				place(grid[c][r], c, r, false)
 
 
+func stage_floor() -> float:
+	return stage.custom_minimum_size.y - 34.0
+
+
 func _position_stage() -> void:
 	var w := colw
-	var fs := 1.9 if w > 560 else 1.45
+	var fs := 1.9 if w > 560 else 1.35
 	me_node.scale = Vector2(fs, fs)
 	foe_node.scale = Vector2(fs * 1.1, fs * 1.1)
-	me_node.position = Vector2(w * 0.23, 262 - 26)
-	foe_node.position = Vector2(w * 0.77, 262 - 26)
+	stage.custom_minimum_size.y = 270 if w > 560 else 262
+	me_node.position = Vector2(w * 0.23, stage_floor())
+	foe_node.position = Vector2(w * 0.77, stage_floor())
 	if foe_node.has_method("start_idle") and not busy:
 		me_node.start_idle(1.2)
 		foe_node.start_idle(0.95)
@@ -804,6 +810,7 @@ func new_game(m: String) -> void:
 	mode = m
 	set_setting("mode", mode)
 	best = setting(best_key(), 0)
+	stop_hint()
 	for ch in tiles_root.get_children():
 		ch.queue_free()
 	for ch in fx.get_children():
@@ -863,7 +870,7 @@ func spawn_foe() -> void:
 	foe_node.modulate = Color(1, 1, 1, 0)
 	foe_node.rotation = 0
 	foe_node.scale = me_node.scale * 1.1
-	var home: Vector2 = Vector2(colw * 0.77, 262 - 26)
+	var home: Vector2 = Vector2(colw * 0.77, stage_floor())
 	foe_node.position = home + Vector2(60, 0)
 	var tw := create_tween().set_parallel()
 	tw.tween_property(foe_node, "position", home, 0.5).set_ease(Tween.EASE_OUT)
@@ -1001,6 +1008,7 @@ func _on_board_input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
 		if ev.pressed:
+			stop_hint()
 			var x = tile_at(ev.position, false)
 			if x == null:
 				return
@@ -1070,6 +1078,15 @@ func _on_hint() -> void:
 	confirm_step("hint", t("cfHintT"), body, _do_hint)
 
 
+# The hinted tiles keep wiggling until the player touches the board, shuffles or submits.
+func stop_hint() -> void:
+	for pair in hint_tweens:
+		pair[0].kill()
+		if is_instance_valid(pair[1]):
+			pair[1].rotation = 0.0
+	hint_tweens.clear()
+
+
 func _do_hint() -> void:
 	var path := find_word(5)
 	if path.is_empty():
@@ -1083,13 +1100,15 @@ func _do_hint() -> void:
 		score = max(0, score - HINT_PTS)
 	sel = []
 	update_ui()
+	stop_hint()
 	for x in path:
 		var n: Panel = x.node
-		var tw := create_tween()
-		for i in 3:
-			tw.tween_property(n, "rotation", 0.15, 0.08)
-			tw.tween_property(n, "rotation", -0.15, 0.16)
-			tw.tween_property(n, "rotation", 0.0, 0.08)
+		var tw := create_tween().set_loops()
+		tw.tween_property(n, "rotation", 0.15, 0.08)
+		tw.tween_property(n, "rotation", -0.15, 0.16)
+		tw.tween_property(n, "rotation", 0.0, 0.08)
+		tw.tween_interval(0.35)
+		hint_tweens.append([tw, n])
 	toast(t("hintToast", {"l": path[0].l.to_upper(), "n": path.size()}))
 
 
@@ -1106,6 +1125,7 @@ func shuffle(costs_turn: bool) -> void:
 	if busy:
 		return
 	busy = true
+	stop_hint()
 	var all := []
 	for col in grid:
 		for x in col:
@@ -1186,6 +1206,7 @@ func submit() -> void:
 		return
 	busy = true
 	var pts := calc(sel)
+	stop_hint()
 	var used := sel.duplicate()
 	sel = []
 	var crit := false

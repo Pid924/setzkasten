@@ -67,7 +67,7 @@ h1 .s{color:var(--rubric)}
 .tile.ink .cd{position:absolute;left:4px;top:2px;font-size:calc(var(--ts)*.22);color:#ff8f7a;font-family:var(--f-body);font-weight:600}
 .tile.ink.danger{animation:throb .9s infinite}
 .tile.sel.ink{background:linear-gradient(180deg,#f6d983,var(--brass));color:var(--ink)}
-.tile.hint{animation:hint 1s 2}
+.tile.hint{animation:hint 1s infinite}
 .tile.heal{background:linear-gradient(180deg,#cfe6b8,#86b56a);color:#132a0c}
 .tile.heal::before{content:attr(data-h);position:absolute;left:4px;top:2px;font-size:calc(var(--ts)*.2);font-family:var(--f-body);font-weight:600;color:#1d4a12}
 .tile:focus-visible{outline:3px solid var(--brass)}
@@ -133,7 +133,7 @@ button small{font-weight:400;opacity:.75}
 .card .big{font-family:var(--f-sort);font-size:40px;font-weight:700;color:var(--rubric)}
 .card button{margin-top:14px;width:100%;background:var(--ink);border-color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);border:1px solid var(--brass);padding:10px 16px;border-radius:8px;z-index:30;max-width:calc(100% - 32px);text-align:center;font-size:14px}
-@media (prefers-reduced-motion:reduce){.tile{transition:none}.tile.hint,.tile.ink.danger,.pop{animation:none}}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}.tile.hint,.tile.ink.danger,.pop{animation:none}.tile.hint{outline:3px solid var(--brass);outline-offset:2px}}
 </style>
 <style>
 /* ---- battle stage ---- */
@@ -471,7 +471,7 @@ function tapTile(x){
   updateWord();
 }
 boardEl.addEventListener('pointerdown',e=>{
-  if(busy)return;const x=tileAt(e.clientX,e.clientY,false);if(!x)return;
+  if(busy)return;stopHint();const x=tileAt(e.clientX,e.clientY,false);if(!x)return;
   e.preventDefault();boardEl.setPointerCapture(e.pointerId);
   drag={moved:false,start:x,wasLast:x===sel[sel.length-1]};
   if(!sel.includes(x)){if(!sel.length||adj(sel[sel.length-1],x))sel.push(x);else sel=[x];drag.added=true;}
@@ -505,7 +505,8 @@ $('hint').onclick=()=>{
   if(!battle()&&score<HINT_PTS){toast(t('hintPts'));return;}
   confirmStep('hint',t('cfHintT'),'<p>'+(battle()?t('cfHintB',{n:HINT_HP}):t('cfHintC',{n:HINT_PTS}))+'</p>',doHint);
 };
-function doHint(){
+function stopHint(){for(const el of boardEl.querySelectorAll('.tile.hint'))el.classList.remove('hint');}
+function doHint(){stopHint();
   const path=findWord(5);if(!path){toast(t('noWords'));shuffle(false);return;}
   if(battle()){php=Math.max(1,php-HINT_HP);floatText(sideAnchor('me'),'−'+HINT_HP,'hurt');}else score=Math.max(0,score-HINT_PTS);
   sel=[];updateUI();
@@ -598,7 +599,7 @@ async function foeDies(){
 // ---------- game flow ----------
 async function submit(){
   const w=wordOf(sel);if(busy||w.length<3||!DICT.has(w))return;
-  busy=true;const pts=calc(sel),used=sel.slice();sel=[];
+  busy=true;stopHint();const pts=calc(sel),used=sel.slice();sel=[];
   const crit=used.some(x=>x.bonus),heal=used.reduce((a,x)=>a+x.heal,0);
   score+=pts;chapScore+=pts;moves++;
   const last=used[used.length-1];const p=document.createElement('div');p.className='pop';p.textContent='+'+pts;
@@ -657,7 +658,7 @@ function tick(){
   if(lost){lives=Math.max(0,lives-lost);toast(t('inkLost',{n:lost}));}
 }
 async function shuffle(costsTurn){
-  if(busy)return;busy=true;
+  if(busy)return;busy=true;stopHint();
   const all=[];for(const col of grid)for(const x of col)all.push(x);
   for(let i=all.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[all[i],all[j]]=[all[j],all[i]];}
   for(let c=0;c<COLS;c++)for(let r=0;r<ROWS;r++)grid[c][r]=all[c*ROWS+r];

@@ -226,7 +226,10 @@ func _load_settings() -> void:
 	lang = cfg.get_value("settings", "lang", "th")
 	if not lang in I18n.LANGS:
 		lang = "th"
-	mode = cfg.get_value("settings", "mode", "classic")
+	mode = cfg.get_value("settings", "mode", "battle")
+	# players who already used Klassisch before the lock existed keep it
+	if mode == "classic" and not cfg.has_section_key("settings", "classic_unlocked"):
+		cfg.set_value("settings", "classic_unlocked", true)
 
 
 func _save() -> void:
@@ -2279,6 +2282,11 @@ func confirm_step(key: String, title: String, body: String, fn: Callable) -> voi
 
 
 func pick_mode(cancelable: bool) -> void:
+	# Klassisch opens once the player has fought in Kampf and comes back to this menu
+	if mode == "battle" and not found.is_empty() and not setting("classic_unlocked", false):
+		set_setting("classic_unlocked", true)
+		toast(t("unlockedC"))
+	var unlocked: bool = setting("classic_unlocked", false)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 0)
@@ -2290,31 +2298,38 @@ func pick_mode(cancelable: bool) -> void:
 			styled_btn(b, Color.TRANSPARENT, C_INK, C_INK)
 		row.add_child(b)
 	var items: Array = [row]
-	for m in [["classic", "Klassisch", t("modeC")], ["battle", "Kampf", t("modeB")]]:
+	for m in [["battle", "Kampf", t("modeB")], ["classic", "Klassisch", t("modeC")]]:
+		var locked: bool = m[0] == "classic" and not unlocked
 		var b := PanelContainer.new()
-		var normal := box(Color("fbf6ea"), 8, C_INK, 2)
+		var normal := box(Color("e4dccb") if locked else Color("fbf6ea"), 8, Color("9a907e") if locked else C_INK, 2)
 		normal.set_content_margin_all(14)
 		var hover := normal.duplicate()
 		hover.bg_color = Color("fff3d6")
 		hover.border_color = C_RUBRIC
 		b.add_theme_stylebox_override("panel", normal)
+		var tl := lbl(m[1] + ("  ·  " + t("lockedT") if locked else ""), 32, Color("8a806e") if locked else C_INK, f_display)
+		tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var dl := lbl(t("lockedC") if locked else m[2], 19, Color("6d6252") if locked else Color("3d372f"))
+		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		dl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var v := VBoxContainer.new()
+		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		v.add_child(tl)
+		v.add_child(dl)
+		b.add_child(v)
+		items.append(b)
+		if locked:
+			b.gui_input.connect(func(ev):
+				if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and not ev.pressed:
+					sfx.play("bad")
+					toast(t("lockedC")))
+			continue
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		b.mouse_entered.connect(func(): b.add_theme_stylebox_override("panel", hover))
 		b.mouse_exited.connect(func(): b.add_theme_stylebox_override("panel", normal))
 		b.gui_input.connect(func(ev):
 			if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and not ev.pressed:
 				new_game(m[0]))
-		var v := VBoxContainer.new()
-		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var tl := lbl(m[1], 32, C_INK, f_display)
-		tl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var dl := lbl(m[2], 19, Color("3d372f"))
-		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		dl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		v.add_child(tl)
-		v.add_child(dl)
-		b.add_child(v)
-		items.append(b)
 	var buttons := []
 	if cancelable:
 		buttons.append([t("back"), close_overlay, false])

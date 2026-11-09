@@ -8,6 +8,9 @@ var body_color := Color("3b3f6b")
 var rig: Node3D
 var parts := []  # [MeshInstance3D, StandardMaterial3D, base Color]
 var tint := Color.WHITE
+var face: Node3D
+var hurt_face: Node3D
+var _hurt_tw: Tween
 var _mats := {}
 
 
@@ -18,6 +21,8 @@ func setup(k: String, c: Color = Color.WHITE) -> void:
 		rig.queue_free()
 	parts.clear()
 	_mats.clear()
+	face = null
+	hurt_face = null
 	rig = Node3D.new()
 	add_child(rig)
 	if kind == "me":
@@ -26,6 +31,65 @@ func setup(k: String, c: Color = Color.WHITE) -> void:
 		_build_enemy()
 	tint = Color.WHITE
 	set_tint(Color.WHITE, true)
+	if hurt_face:
+		hurt_face.visible = false
+
+
+## Flinch: lean away from the hit (dir = +1 pushes towards +X), squash, wince face. strength 0..1.5.
+func hurt(dir: float, strength: float = 1.0) -> void:
+	if not rig:
+		return
+	if _hurt_tw:
+		_hurt_tw.kill()
+	rig.rotation = Vector3.ZERO
+	rig.position = Vector3.ZERO
+	rig.scale = Vector3.ONE
+	if face and hurt_face:
+		face.visible = false
+		hurt_face.visible = true
+	var lean := -dir * (0.35 + 0.2 * strength)
+	_hurt_tw = create_tween()
+	_hurt_tw.tween_property(rig, "rotation:z", lean, 0.07).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_hurt_tw.parallel().tween_property(rig, "rotation:x", -0.25 * strength, 0.07)
+	_hurt_tw.parallel().tween_property(rig, "position:x", dir * 0.3 * strength, 0.07)
+	_hurt_tw.parallel().tween_property(rig, "scale", Vector3(1.12, 0.86, 1.12), 0.07)
+	_hurt_tw.tween_property(rig, "scale", Vector3(0.94, 1.06, 0.94), 0.1)
+	# wobble back upright
+	_hurt_tw.tween_property(rig, "rotation:z", -lean * 0.35, 0.16).set_trans(Tween.TRANS_SINE)
+	_hurt_tw.parallel().tween_property(rig, "rotation:x", 0.06, 0.16)
+	_hurt_tw.parallel().tween_property(rig, "position:x", 0.0, 0.3)
+	_hurt_tw.parallel().tween_property(rig, "scale", Vector3.ONE, 0.2)
+	_hurt_tw.tween_property(rig, "rotation:z", lean * 0.12, 0.14).set_trans(Tween.TRANS_SINE)
+	_hurt_tw.parallel().tween_property(rig, "rotation:x", 0.0, 0.14)
+	_hurt_tw.tween_property(rig, "rotation:z", 0.0, 0.14).set_trans(Tween.TRANS_SINE)
+	_hurt_tw.tween_interval(0.25 + 0.2 * strength)
+	_hurt_tw.tween_callback(func():
+		if face and hurt_face:
+			face.visible = true
+			hurt_face.visible = false)
+
+
+## Short wind-up used before attacking: crouch then stretch.
+func windup() -> void:
+	if not rig:
+		return
+	var tw := create_tween()
+	tw.tween_property(rig, "scale", Vector3(1.1, 0.88, 1.1), 0.09)
+	tw.tween_property(rig, "scale", Vector3(0.92, 1.12, 0.92), 0.08)
+	tw.tween_property(rig, "scale", Vector3.ONE, 0.15)
+
+
+## Squeezed ">  <" eyes and an open "ouch" mouth.
+func _make_hurt_face(parent: Node3D, y: float, z: float, spread: float, size: float, mouth_y: float) -> void:
+	hurt_face = Node3D.new()
+	hurt_face.visible = false
+	parent.add_child(hurt_face)
+	var ink := Color("1b1a1f")
+	for sx in [-spread, spread]:
+		var side := -1.0 if sx < 0 else 1.0
+		for up in [1.0, -1.0]:
+			add(cube(size * 1.5, size * 0.32, size * 0.3), ink, Vector3(sx, y + up * size * 0.32, z + size * 1.0), Vector3(0, 0, up * side * 28), Vector3.ONE, hurt_face)
+	add(sphere(size * 0.9), Color("3a0f0c"), Vector3(0, mouth_y, z + size * 0.5), Vector3.ZERO, Vector3(1.1, 0.85, 0.45), hurt_face, 0.3)
 
 
 ## Multiplies every part's colour by c; alpha below 1 switches the materials to transparent.
@@ -132,14 +196,17 @@ func _build_me() -> void:
 	for sx in [-0.32, 0.32]:
 		add(sphere(0.07), skin, Vector3(sx, 0, 0), Vector3.ZERO, Vector3(0.6, 1, 1), head)
 	# eyes, cheeks, smile
+	face = Node3D.new()
+	head.add_child(face)
 	for sx in [-0.12, 0.12]:
-		add(sphere(0.055), Color.WHITE, Vector3(sx, 0.06, 0.29), Vector3.ZERO, Vector3.ONE, head, 0.2)
-		add(sphere(0.032), ink, Vector3(sx, 0.06, 0.335), Vector3.ZERO, Vector3.ONE, head, 0.2)
+		add(sphere(0.055), Color.WHITE, Vector3(sx, 0.06, 0.29), Vector3.ZERO, Vector3.ONE, face, 0.2)
+		add(sphere(0.032), ink, Vector3(sx, 0.06, 0.335), Vector3.ZERO, Vector3.ONE, face, 0.2)
 		add(sphere(0.06), Color(0.93, 0.58, 0.5), Vector3(sx * 1.6, -0.08, 0.25), Vector3.ZERO, Vector3(1, 0.6, 0.4), head)
 	var smile := TorusMesh.new()
 	smile.inner_radius = 0.07
 	smile.outer_radius = 0.09
-	add(smile, Color("7a2f22"), Vector3(0, -0.13, 0.29), Vector3(80, 0, 0), Vector3(1, 1, 0.5), head)
+	add(smile, Color("7a2f22"), Vector3(0, -0.13, 0.29), Vector3(80, 0, 0), Vector3(1, 1, 0.5), face)
+	_make_hurt_face(head, 0.06, 0.27, 0.12, 0.06, -0.14)
 	# folded paper printer's hat
 	add(prism(0.82, 0.46, 0.42), Color("f6f0e2"), Vector3(0, 0.4, -0.02), Vector3(-6, 0, 0), Vector3.ONE, head, 0.9)
 	add(cube(0.82, 0.08, 0.06), Color("dcd2bb"), Vector3(0, 0.2, 0.2), Vector3.ZERO, Vector3.ONE, head, 0.9)
@@ -156,14 +223,17 @@ func _build_me() -> void:
 
 func _eyes(y: float, z: float, spread: float, size: float) -> void:
 	var ink := Color("1b1a1f")
+	face = Node3D.new()
+	rig.add_child(face)
+	_make_hurt_face(rig, y, z, spread, size, y - size * 2.4)
 	for sx in [-spread, spread]:
-		add(sphere(size), Color("f6f0e2"), Vector3(sx, y, z), Vector3.ZERO, Vector3.ONE, null, 0.2)
-		add(sphere(size * 0.5), ink, Vector3(sx * 0.92, y - size * 0.15, z + size * 0.72), Vector3.ZERO, Vector3.ONE, null, 0.1)
-		add(cube(size * 2.0, size * 0.35, size * 0.4), ink, Vector3(sx * 1.05, y + size * 1.15, z + size * 0.5), Vector3(0, 0, 22 if sx < 0 else -22))
+		add(sphere(size), Color("f6f0e2"), Vector3(sx, y, z), Vector3.ZERO, Vector3.ONE, face, 0.2)
+		add(sphere(size * 0.5), ink, Vector3(sx * 0.92, y - size * 0.15, z + size * 0.72), Vector3.ZERO, Vector3.ONE, face, 0.1)
+		add(cube(size * 2.0, size * 0.35, size * 0.4), ink, Vector3(sx * 1.05, y + size * 1.15, z + size * 0.5), Vector3(0, 0, 22 if sx < 0 else -22), Vector3.ONE, face)
 	var frown := TorusMesh.new()
 	frown.inner_radius = size * 0.9
 	frown.outer_radius = size * 1.25
-	add(frown, ink, Vector3(0, y - size * 2.4, z - 0.02), Vector3(80, 0, 0), Vector3(1.2, 1, 0.5))
+	add(frown, ink, Vector3(0, y - size * 2.4, z - 0.02), Vector3(80, 0, 0), Vector3(1.2, 1, 0.5), face)
 
 
 func _build_enemy() -> void:

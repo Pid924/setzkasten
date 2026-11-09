@@ -4,6 +4,7 @@ extends Control
 
 const Fighter := preload("res://scripts/fighter.gd")
 const Fighter3D := preload("res://scripts/fighter3d.gd")
+const Sfx := preload("res://scripts/sfx.gd")
 const SIZE3 := 1.35
 
 const COLS := 7
@@ -109,6 +110,9 @@ var home_me3 := Vector3.ZERO
 var home_foe3 := Vector3.ZERO
 var base_fs := 1.0
 var dict_btn: Button
+var sfx: Node
+var snd_btn: Button
+var last_sel := 0
 var outer: MarginContainer
 var dict_layer: Control
 var dict_holder: VBoxContainer
@@ -163,6 +167,9 @@ func _ready() -> void:
 		for i in FREQ[k]:
 			pool.append(k)
 	_load_settings()
+	sfx = Sfx.new()
+	add_child(sfx)
+	sfx.muted = setting("mute", false)
 	_load_dictionary()
 	_build_styles()
 	_build_ui()
@@ -172,6 +179,17 @@ func _ready() -> void:
 	pick_mode(false)
 	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("autotest"):
 		_autotest()
+	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("fxdemo"):
+		new_game("battle")
+		close_overlay()
+		await get_tree().create_timer(1.0).timeout
+		if str(JavaScriptBridge.eval("location.search")).contains("slow"):
+			Engine.time_scale = 0.12
+		for wd in ["HAUS", "GARTEN", "SETZKASTEN"]:
+			await player_attack(wd, 5, false, 0)
+			await get_tree().create_timer(0.6).timeout
+		foe.atk = 20
+		await enemy_attack()
 	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("gallery"):
 		new_game("battle")
 		close_overlay()
@@ -337,6 +355,7 @@ func lbl(text: String = "", size: int = 22, col: Color = C_PAPER, font: Font = n
 func btn(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.pressed.connect(func(): sfx.play("tap"))
 	b.pressed.connect(cb)
 	return b
 
@@ -406,9 +425,15 @@ func _build_ui() -> void:
 	mode_lbl = lbl("", 18, C_MUTED)
 	mode_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hr.add_child(mode_lbl)
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 6)
+	hr.add_child(hb)
+	snd_btn = btn("", toggle_sound)
+	snd_btn.add_theme_font_size_override("font_size", 18)
+	hb.add_child(snd_btn)
 	mode_btn = btn("", func(): pick_mode(true))
 	mode_btn.add_theme_font_size_override("font_size", 18)
-	hr.add_child(mode_btn)
+	hb.add_child(mode_btn)
 
 	# stats
 	var stats := HBoxContainer.new()
@@ -1207,6 +1232,7 @@ func set_lang(l: String) -> void:
 
 func apply_lang() -> void:
 	mode_btn.text = t("changeMode")
+	snd_btn.text = t("sndOff") if sfx.muted else t("sndOn")
 	mode_lbl.text = t("tagB") if mode == "battle" else t("tagC")
 	stat_labels.score.text = t("score")
 	stat_labels.lives.text = t("lives")
@@ -1284,8 +1310,18 @@ func dmg_of(p: int) -> int:
 	return max(1, int(round(p / 10.0)))
 
 
+func toggle_sound() -> void:
+	sfx.muted = not sfx.muted
+	set_setting("mute", sfx.muted)
+	snd_btn.text = t("sndOff") if sfx.muted else t("sndOn")
+	sfx.play("tap")
+
+
 func update_word() -> void:
 	var w := word_of(sel)
+	if sel.size() > last_sel:
+		sfx.play("pick", 0.9 + 0.08 * sel.size())
+	last_sel = sel.size()
 	var ok := is_word(w)
 	word_lbl.text = w.to_upper() if sel.size() > 0 else t("tap")
 	word_lbl.add_theme_color_override("font_color", C_PAPER if ok else C_MUTED)
@@ -1417,6 +1453,8 @@ func _do_hint() -> void:
 	if mode == "battle":
 		php = max(1, php - HINT_HP)
 		float_text(pt2(me3, 2.3), "−" + str(HINT_HP), Color("ff8f7a"), 30)
+		me3.hurt(-1.0, 0.3)
+		sfx.play("grunt", 1.2, -4.0)
 	else:
 		score = max(0, score - HINT_PTS)
 	sel = []
@@ -1430,6 +1468,7 @@ func _do_hint() -> void:
 		tw.tween_property(n, "rotation", 0.0, 0.08)
 		tw.tween_interval(0.35)
 		hint_tweens.append([tw, n])
+	sfx.play("hint")
 	toast(t("hintToast", {"l": path[0].l.to_upper(), "n": path.size()}))
 
 
@@ -1447,6 +1486,7 @@ func shuffle(costs_turn: bool) -> void:
 		return
 	busy = true
 	stop_hint()
+	sfx.play("shuffle")
 	var all := []
 	for col in grid:
 		for x in col:
@@ -1523,7 +1563,11 @@ func _dfs(x: Dictionary, pre: String, path: Array, seen: Dictionary, out: Array)
 # ---------------- turn flow ----------------
 func submit() -> void:
 	var w := word_of(sel)
-	if busy or not is_word(w):
+	if busy:
+		return
+	if not is_word(w):
+		if sel.size() > 0:
+			sfx.play("bad")
 		return
 	busy = true
 	var pts := calc(sel)
@@ -1565,6 +1609,7 @@ func submit() -> void:
 		update_ui()
 		check_over()
 		return
+	sfx.play("heal", 0.8)
 	tick()
 	busy = false
 	update_ui()
@@ -1637,6 +1682,7 @@ func tick() -> void:
 				paint(x)
 	if lost > 0:
 		lives = max(0, lives - lost)
+		sfx.play("ink")
 		toast(t("inkLost", {"n": lost}))
 
 
@@ -1657,6 +1703,7 @@ func foe_defeated() -> void:
 	php = min(pmax, php + 20)
 	spawn_foe()
 	update_ui()
+	sfx.play("win")
 	var st := foe_stats(chap)
 	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every}), [[t("fight"), close_overlay, true]])
 
@@ -1666,12 +1713,14 @@ func next_chapter() -> void:
 	chap_score = 0
 	lives = min(3, lives + 1)
 	update_ui()
+	sfx.play("win")
 	show_dialog("Kapitel " + str(chap), t("chapB", {"p": chap - 1}), [[t("go"), close_overlay, true]])
 
 
 func check_over() -> void:
 	if (php > 0) if mode == "battle" else (lives > 0):
 		return
+	sfx.play("lose")
 	if score > best:
 		best = score
 		set_setting(best_key(), best)
@@ -1828,20 +1877,62 @@ func sort3d(letter: String, crit: bool) -> MeshInstance3D:
 	return s
 
 
+## Spinning composing stick (Winkelhaken) used for medium attacks.
+func stick3d() -> Node3D:
+	var n := Node3D.new()
+	var steel := mat3(Color("b8c0c4"), 0.2, 0.85)
+	mesh3(boxm(1.0, 0.1, 0.22), steel, Vector3.ZERO, n)
+	mesh3(boxm(0.08, 0.22, 0.22), steel, Vector3(-0.48, 0.08, 0), n)
+	var brass := mat3(Color("d9b04f"), 0.25, 0.9)
+	for i in 4:
+		mesh3(boxm(0.12, 0.16, 0.16), brass, Vector3(-0.3 + i * 0.16, 0.12, 0), n)
+	return n
+
+
+## Flat glowing ring that spreads over the floor from an impact.
+func shockwave(at: Vector3, col: Color) -> void:
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.85
+	tm.outer_radius = 1.0
+	tm.rings = 32
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = col
+	var r := mesh3(tm, m, Vector3(at.x, 0.05, at.z), fx3, Vector3.ZERO, false)
+	r.scale = Vector3(0.3, 0.2, 0.3)
+	var tw := create_tween().set_parallel()
+	tw.tween_property(r, "scale", Vector3(3.2, 0.2, 3.2), 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	tw.tween_property(m, "albedo_color:a", 0.0, 0.5)
+	tw.chain().tween_callback(r.queue_free)
+
+
+## Attack strength: 0 light (flying sorts), 1 medium (+ composing stick), 2 heavy (+ giant falling sort).
+func attack_tier(word: String, crit: bool) -> int:
+	var n := word.length()
+	var tier := 0 if n <= 4 else (1 if n <= 6 else 2)
+	return min(2, tier + (1 if crit else 0))
+
+
 func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 	var sc := me3.scale.y
+	var tier := attack_tier(word, crit)
 	if heal > 0:
+		sfx.play("heal")
 		burst(me3.position + Vector3(0, 0.6 * sc, 0.2), [Color("e9f7d9"), Color("a8e08a"), Color("6fbf4f")], 24, 1.0, true)
 		flash(me3.position + Vector3(0, 1.2 * sc, 0.8), Color("8fe07a"), 2.0)
 		float_text(pt2(me3, 2.2) + Vector2(0, -10), "+" + str(heal) + " HP", Color("a8e08a"))
 	me_node.stop_idle()
+	me3.windup()
 	var home := me_node.position
 	var lunge := create_tween()
-	lunge.tween_property(me_node, "position", home + Vector2(24, -6), 0.12)
+	lunge.tween_interval(0.12)
+	lunge.tween_property(me_node, "position", home + Vector2(24 + tier * 10, -6), 0.12)
 	lunge.tween_property(me_node, "rotation", 0.12, 0.08)
 	lunge.tween_property(me_node, "position", home, 0.2)
 	lunge.parallel().tween_property(me_node, "rotation", 0.0, 0.2)
 	lunge.tween_callback(func(): me_node.start_idle(1.2))
+	sfx.play("throw", 1.0 + 0.1 * (2 - tier))
 	var letters := []
 	var i := 0
 	var up := word.to_upper()
@@ -1862,36 +1953,78 @@ func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 		var ctrl := (start + target3) / 2 + Vector3(0, 1.7, 1.4)
 		var spin := Vector3(randf_range(1.0, 2.0), randf_range(1.5, 3.0), randf_range(-1.0, 1.0)) * TAU
 		var tw := create_tween()
-		tw.tween_interval(j * 0.07)
+		tw.tween_interval(0.12 + j * 0.07)
 		tw.tween_callback(func(): s.visible = true)
 		tw.tween_method(func(k: float): s.position = bezier(start, ctrl, target3, k); s.rotation = spin * k, 0.0, 1.0, 0.46).set_trans(Tween.TRANS_SINE)
-		tw.tween_callback(s.queue_free)
+		tw.tween_callback(func():
+			s.queue_free()
+			sfx.play("pick", 1.4 + randf() * 0.4, -8.0)
+			foe3.hurt(1.0, 0.25))
 		last_tw = tw
+	var stick: Node3D
+	if tier >= 1:
+		stick = stick3d()
+		fx3.add_child(stick)
+		var a := me3.position + Vector3(0.6 * sc, 1.1 * sc, 0.5)
+		var c := (a + target3) / 2 + Vector3(0, 0.6, 1.8)
+		stick.position = a
+		var st := create_tween()
+		st.tween_interval(0.15)
+		st.tween_callback(func(): sfx.play("spin"))
+		st.tween_method(func(k: float): stick.position = bezier(a, c, target3, k); stick.rotation = Vector3(0.4, k * TAU * 3.0, 0.2), 0.0, 1.0, 0.5 + letters.size() * 0.07)
+		last_tw = st
 	if last_tw:
 		await last_tw.finished
+	if tier == 2:
+		await _giant_sort(letters[0] if letters.size() > 0 else "A", crit)
+	var impact := foe3.position + Vector3(0, 1.0 * foe3.scale.y, 0.35)
 	var cols_fx := [Color.WHITE, Color("ffb35a"), Color("e3742f")] if crit else [Color("f3ecdc"), Color("ffd27a"), Color("c9a24a")]
-	burst(target3, cols_fx, 40 if crit else 24)
-	flash(target3 + Vector3(0, 0, 0.6), Color("ffb35a") if crit else Color("ffe0a0"), 4.0 if crit else 2.5)
-	float_text(pt2(foe3, 2.1), "−" + str(dmg), Color("ffb35a") if crit else Color("ffd27a"), 46 if crit else 36)
+	sfx.play(["hit_l", "hit_m", "hit_h"][tier])
+	if crit:
+		sfx.play("ring")
+	sfx.play("grunt", 0.8 if tier == 2 else 1.0, -2.0)
+	burst(impact, cols_fx, [22, 34, 60][tier] + (12 if crit else 0))
+	flash(impact + Vector3(0, 0, 0.6), Color("ffb35a") if crit else Color("ffe0a0"), [2.0, 3.0, 5.0][tier])
+	float_text(pt2(foe3, 2.1), "−" + str(dmg), Color("ffb35a") if crit else Color("ffd27a"), [34, 42, 52][tier])
+	foe3.hurt(1.0, [0.6, 1.0, 1.5][tier])
 	var fh := create_tween()
 	fh.tween_property(foe_node, "modulate", Color(1, 0.35, 0.35), 0.06)
 	fh.tween_property(foe_node, "modulate", Color.WHITE, 0.25)
-	shake(foe_node, 10.0)
-	cam_shake(12.0 if crit else 5.0)
-	await get_tree().create_timer(0.3).timeout
+	shake(foe_node, [6.0, 10.0, 16.0][tier])
+	cam_shake([4.0, 8.0, 16.0][tier] + (4.0 if crit else 0.0))
+	if stick:
+		# the composing stick bounces back to the typesetter's hand
+		var back := me3.position + Vector3(0.6 * sc, 1.1 * sc, 0.5)
+		var from := stick.position
+		var bt := create_tween()
+		bt.tween_method(func(k: float): stick.position = bezier(from, (from + back) / 2 + Vector3(0, 1.0, 1.2), back, k); stick.rotation = Vector3(0.4, -k * TAU * 2.0, 0.2), 0.0, 1.0, 0.4)
+		bt.tween_callback(stick.queue_free)
+	await get_tree().create_timer(0.3 + 0.1 * tier).timeout
 
 
-func enemy_attack() -> void:
-	foe_node.stop_idle()
-	var home := foe_node.position
-	var bs := foe_node.scale
+## Heavy hit: an oversized lead sort drops from above onto the enemy.
+func _giant_sort(letter: String, crit: bool) -> void:
+	var g := sort3d(letter, crit)
+	g.scale = Vector3(3.2, 3.2, 3.2)
+	fx3.add_child(g)
+	var land := foe3.position + Vector3(0, 0.75, 0.4)
+	var top := land + Vector3(0.3, 5.5, 0)
+	g.position = top
+	g.rotation = Vector3(0.3, -0.5, 0.4)
+	sfx.play("drop")
 	var tw := create_tween()
-	tw.tween_property(foe_node, "position", home + Vector2(-28, 0), 0.15)
-	tw.parallel().tween_property(foe_node, "scale", bs * 1.08, 0.15)
-	tw.tween_property(foe_node, "position", home, 0.18)
-	tw.parallel().tween_property(foe_node, "scale", bs, 0.18)
+	tw.tween_property(g, "position", land + Vector3(0, 0.6 * foe3.scale.y, 0), 0.42).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(g, "rotation", Vector3(0, -0.2, 0.05), 0.42)
 	await tw.finished
-	foe_node.start_idle(0.95)
+	shockwave(foe3.position, Color(1.0, 0.75, 0.3, 0.9) if crit else Color(1.0, 0.9, 0.6, 0.8))
+	burst(Vector3(foe3.position.x, 0.2, foe3.position.z + 0.3), [Color("d8c49a"), Color("8a6a4c"), Color("3a2a1f")], 40)
+	var out := create_tween()
+	out.tween_property(g, "position:y", g.position.y + 0.5, 0.15).set_ease(Tween.EASE_OUT)
+	out.tween_property(g, "scale", Vector3(0.01, 0.01, 0.01), 0.3).set_ease(Tween.EASE_IN)
+	out.tween_callback(g.queue_free)
+
+
+func ink_ball() -> MeshInstance3D:
 	var ball := MeshInstance3D.new()
 	var bm := SphereMesh.new()
 	bm.radius = 0.24
@@ -1901,7 +2034,6 @@ func enemy_attack() -> void:
 	im.rim_enabled = true
 	im.rim = 0.6
 	ball.material_override = im
-	fx3.add_child(ball)
 	var trail := CPUParticles3D.new()
 	trail.amount = 24
 	trail.lifetime = 0.35
@@ -1918,22 +2050,54 @@ func enemy_attack() -> void:
 	trail.mesh = tm
 	trail.material_override = mat3(Color("2a2635"), 0.1, 0.2)
 	ball.add_child(trail)
+	return ball
+
+
+func enemy_attack() -> void:
+	var heavy: bool = foe.atk >= 14
+	var count := 3 if heavy else 1
+	foe_node.stop_idle()
+	foe3.windup()
+	var home := foe_node.position
+	var bs := foe_node.scale
+	var tw := create_tween()
+	tw.tween_interval(0.1)
+	tw.tween_property(foe_node, "position", home + Vector2(-28, 0), 0.15)
+	tw.parallel().tween_property(foe_node, "scale", bs * (1.14 if heavy else 1.08), 0.15)
+	tw.tween_property(foe_node, "position", home, 0.18)
+	tw.parallel().tween_property(foe_node, "scale", bs, 0.18)
+	await tw.finished
+	foe_node.start_idle(0.95)
 	var a := me3.position + Vector3(0, 1.1 * me3.scale.y, 0.3)
 	var b := foe3.position + Vector3(-0.3, 0.9 * foe3.scale.y, 0.6)
-	var ctrl := (a + b) / 2 + Vector3(0, 1.9, 1.0)
-	var bt := create_tween()
-	bt.tween_method(func(k: float): ball.position = bezier(b, ctrl, a, k); ball.scale = Vector3.ONE * (1.0 + 0.25 * sin(k * PI)), 0.0, 1.0, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	await bt.finished
-	ball.queue_free()
-	burst(a, [Color("5b5670"), Color("3b3f6b"), Color("121016")], 30, 0.0, true)
+	var last: Tween
+	for n in count:
+		var ball := ink_ball()
+		ball.visible = false
+		fx3.add_child(ball)
+		var ctrl := (a + b) / 2 + Vector3(0, 1.9 + n * 0.5, 1.0 - n * 0.6)
+		var hit := a + Vector3(randf_range(-0.15, 0.15), randf_range(-0.2, 0.2), 0) if n > 0 else a
+		var bt := create_tween()
+		bt.tween_interval(n * 0.14)
+		bt.tween_callback(func(): ball.visible = true; sfx.play("throw", 0.8 + n * 0.1))
+		bt.tween_method(func(k: float): ball.position = bezier(b, ctrl, hit, k); ball.scale = Vector3.ONE * (1.0 + 0.25 * sin(k * PI)), 0.0, 1.0, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		var last_one := n == count - 1
+		bt.tween_callback(func():
+			ball.queue_free()
+			sfx.play("ink", 1.0 + n * 0.08)
+			burst(hit, [Color("5b5670"), Color("3b3f6b"), Color("121016")], 30 if last_one else 14, 0.0, true)
+			me3.hurt(-1.0, 1.3 if (last_one and heavy) else 0.8)
+			cam_shake(14.0 if last_one else 6.0))
+		last = bt
+	await last.finished
+	sfx.play("hurt")
 	flash(a + Vector3(0, 0, 0.6), Color("8a7cff"), 2.0)
-	float_text(pt2(me3, 2.1), "−" + str(foe.atk), Color("ff8f7a"), 40)
+	float_text(pt2(me3, 2.1), "−" + str(foe.atk), Color("ff8f7a"), 46 if heavy else 40)
 	var mh := create_tween()
 	mh.tween_property(me_node, "modulate", Color(1, 0.3, 0.3), 0.06)
 	mh.tween_property(me_node, "modulate", Color.WHITE, 0.35)
 	shake(me_node, 8.0)
-	cam_shake(12.0)
-	shake(tiles_root, 8.0)
+	shake(tiles_root, 12.0 if heavy else 8.0)
 	_ink_splat()
 	await get_tree().create_timer(0.25).timeout
 
@@ -1964,6 +2128,8 @@ func foe_dies() -> void:
 	burst(b, [Color("f3ecdc"), Color("b9a888"), Color("1b1a1f")], 60)
 	flash(b + Vector3(0, 0, 0.6), Color("fff0c0"), 4.0)
 	cam_shake(10.0)
+	sfx.play("hit_h", 0.7)
+	shockwave(foe3.position, Color(1, 0.95, 0.8, 0.8))
 	var tw := create_tween().set_parallel()
 	tw.tween_property(foe_node, "rotation", 0.5, 0.6).set_ease(Tween.EASE_IN)
 	tw.tween_property(foe_node, "scale", foe_node.scale * 0.3, 0.6).set_ease(Tween.EASE_IN)

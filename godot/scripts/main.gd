@@ -3,6 +3,8 @@ extends Control
 ## The whole interface is built in code so the project needs no editor-made scenes.
 
 const Fighter := preload("res://scripts/fighter.gd")
+const Fighter3D := preload("res://scripts/fighter3d.gd")
+const SIZE3 := 1.35
 
 const COLS := 7
 const ROWS := 7
@@ -93,6 +95,23 @@ var scene: Node2D
 var fx: Node2D
 var me_node: Node2D
 var foe_node: Node2D
+var vpc: SubViewportContainer
+var vp: SubViewport
+var cam: Camera3D
+var fx3: Node3D
+var me3: Node3D
+var foe3: Node3D
+var vk := 1.0
+var ppu := 50.0
+var home_me2 := Vector2.ZERO
+var home_foe2 := Vector2.ZERO
+var home_me3 := Vector3.ZERO
+var home_foe3 := Vector3.ZERO
+var base_fs := 1.0
+var dict_btn: Button
+var outer: MarginContainer
+var dict_layer: Control
+var dict_holder: VBoxContainer
 var me_info: VBoxContainer
 var foe_info: VBoxContainer
 var me_hp: ProgressBar
@@ -153,6 +172,14 @@ func _ready() -> void:
 	pick_mode(false)
 	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("autotest"):
 		_autotest()
+	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("gallery"):
+		new_game("battle")
+		close_overlay()
+		for k in FOES.size():
+			chap = k + 1
+			spawn_foe()
+			update_ui()
+			await get_tree().create_timer(3.0).timeout
 
 
 # Plays a few battle turns by itself; only runs when the page URL contains ?autotest.
@@ -344,7 +371,7 @@ func _build_ui() -> void:
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
-	var outer := MarginContainer.new()
+	outer = MarginContainer.new()
 	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right", "top", "bottom"]:
 		outer.add_theme_constant_override("margin_" + side, 18)
@@ -461,53 +488,71 @@ func _build_ui() -> void:
 	brow.add_child(btn_hint)
 	btn_shuffle = btn("", _on_shuffle)
 	brow.add_child(btn_shuffle)
+	dict_btn = btn("", open_dict)
+	styled_btn(dict_btn, C_PAPER, C_INK, C_SORT_EDGE)
+	dict_btn.add_theme_font_size_override("font_size", 22)
+	left.add_child(dict_btn)
 
 	_build_dict()
+	_build_dict_layer()
 	_build_overlay()
 	_build_toast()
 
 
 func _build_stage() -> void:
 	stage = Panel.new()
-	var sb := box(Color("3a2a1f"), 10, C_EDGE, 2)
+	var sb := box(Color("140d08"), 10, C_EDGE, 2)
 	stage.add_theme_stylebox_override("panel", sb)
 	stage.clip_contents = true
 	stage.custom_minimum_size.y = 270
 	left.add_child(stage)
-	var floor := ColorRect.new()
-	floor.color = Color("24180f")
-	floor.anchor_left = 0
-	floor.anchor_right = 1
-	floor.anchor_top = 1
-	floor.anchor_bottom = 1
-	floor.offset_top = -46
-	floor.offset_left = 2
-	floor.offset_right = -2
-	floor.offset_bottom = -2
-	floor.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stage.add_child(floor)
-	var glow := ColorRect.new()
-	glow.color = Color(1, 0.85, 0.6, 0.05)
-	glow.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	glow.offset_bottom = 120
-	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stage.add_child(glow)
+	vpc = SubViewportContainer.new()
+	vpc.stretch = false
+	vpc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vpc.position = Vector2(2, 2)
+	stage.add_child(vpc)
+	vp = SubViewport.new()
+	vp.own_world_3d = true
+	vp.msaa_3d = Viewport.MSAA_2X
+	vp.positional_shadow_atlas_size = 1024
+	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
+	vp.size = Vector2i(600, 260)
+	vpc.add_child(vp)
+	_build_world()
 	scene = Node2D.new()
 	stage.add_child(scene)
+	# invisible 2D anchors: tweens move these and _process copies them onto the 3D fighters
 	me_node = Fighter.new()
 	me_node.setup("me")
+	me_node.visible = false
 	scene.add_child(me_node)
 	foe_node = Fighter.new()
+	foe_node.visible = false
 	scene.add_child(foe_node)
 	fx = Node2D.new()
 	fx.z_index = 5
 	scene.add_child(fx)
+	var top_shade := TextureRect.new()
+	var gt := GradientTexture2D.new()
+	gt.gradient = Gradient.new()
+	gt.gradient.set_color(0, Color(0.03, 0.02, 0.01, 0.7))
+	gt.gradient.set_color(1, Color(0.03, 0.02, 0.01, 0.0))
+	gt.fill_from = Vector2(0, 0)
+	gt.fill_to = Vector2(0, 1)
+	top_shade.texture = gt
+	top_shade.stretch_mode = TextureRect.STRETCH_SCALE
+	top_shade.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_shade.offset_bottom = 130
+	top_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stage.add_child(top_shade)
 	var mk_info := func(is_me: bool) -> Array:
 		var v := VBoxContainer.new()
 		v.add_theme_constant_override("separation", 2)
 		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stage.add_child(v)
 		var name := lbl("", 18, C_PAPER)
+		name.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		name.add_theme_constant_override("outline_size", 6)
 		name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(name)
@@ -518,7 +563,9 @@ func _build_stage() -> void:
 		if not is_me:
 			bar.add_theme_stylebox_override("fill", box(C_RUBRIC, 5))
 		v.add_child(bar)
-		var hp := lbl("", 18, C_MUTED)
+		var hp := lbl("", 18, C_PAPER)
+		hp.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		hp.add_theme_constant_override("outline_size", 6)
 		hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		hp.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(hp)
@@ -533,10 +580,255 @@ func _build_stage() -> void:
 	foe_name_lbl = b[1]
 	foe_hp = b[2]
 	foe_hp_lbl = b[3]
-	foe_atk_lbl = lbl("", 18, Color("ff8f7a"))
+	foe_atk_lbl = lbl("", 18, Color("ff9c88"))
+	foe_atk_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	foe_atk_lbl.add_theme_constant_override("outline_size", 6)
 	foe_atk_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	foe_atk_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	foe_info.add_child(foe_atk_lbl)
+
+
+const FLOOR_SHADER := """
+shader_type spatial;
+varying vec3 wpos;
+float hash(float n) { return fract(sin(n * 127.1) * 43758.5453); }
+void vertex() { wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+void fragment() {
+	float row = floor(wpos.z / 0.55);
+	float off = hash(row) * 3.0;
+	float seg = floor((wpos.x + off) / 2.6);
+	float h = hash(row * 7.0 + seg * 13.0);
+	vec3 base = mix(vec3(0.19, 0.11, 0.06), vec3(0.34, 0.21, 0.11), h);
+	float grain = sin((wpos.x + off) * 9.0 + sin(wpos.z * 17.0 + h * 6.0) * 1.5) * 0.5 + 0.5;
+	base *= 0.82 + 0.18 * grain;
+	float gz = fract(wpos.z / 0.55);
+	float gx = fract((wpos.x + off) / 2.6);
+	float seam = smoothstep(0.0, 0.04, gz) * smoothstep(1.0, 0.96, gz) * smoothstep(0.0, 0.012, gx) * smoothstep(1.0, 0.988, gx);
+	ALBEDO = base * mix(0.3, 1.0, seam);
+	ROUGHNESS = 0.55 + 0.2 * grain;
+	SPECULAR = 0.35;
+}
+"""
+
+
+func mat3(c: Color, rough: float = 0.7, metal: float = 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = rough
+	m.metallic = metal
+	return m
+
+
+func mesh3(mesh: Mesh, m: Material, pos: Vector3, parent: Node3D, rot_deg: Vector3 = Vector3.ZERO, shadows: bool = true) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = m
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	if not shadows:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
+	return mi
+
+
+func boxm(x: float, y: float, z: float) -> BoxMesh:
+	var b := BoxMesh.new()
+	b.size = Vector3(x, y, z)
+	return b
+
+
+## The 3D print shop behind the fight: plank floor, a wall-sized type case full of sorts, a hanging lamp.
+func _build_world() -> void:
+	var world := Node3D.new()
+	vp.add_child(world)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color("120b07")
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color("9c7a58")
+	env.ambient_light_energy = 0.6
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 1.1
+	env.fog_enabled = true
+	env.fog_light_color = Color("1c130c")
+	env.fog_density = 0.035
+	var we := WorldEnvironment.new()
+	we.environment = env
+	world.add_child(we)
+	cam = Camera3D.new()
+	cam.fov = 34
+	cam.position = Vector3(0, 2.1, 9.0)
+	cam.current = true
+	world.add_child(cam)
+	cam.look_at(Vector3(0, 1.95, 0))
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-48, -28, 0)
+	sun.light_color = Color("ffe1b5")
+	sun.light_energy = 1.25
+	sun.shadow_enabled = true
+	sun.shadow_blur = 1.5
+	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+	sun.directional_shadow_max_distance = 22.0
+	world.add_child(sun)
+	var lamp := OmniLight3D.new()
+	lamp.position = Vector3(0, 3.3, 1.2)
+	lamp.light_color = Color("ffc777")
+	lamp.light_energy = 1.6
+	lamp.omni_range = 8.0
+	world.add_child(lamp)
+	# floor
+	var fl := PlaneMesh.new()
+	fl.size = Vector2(34, 16)
+	var fm := ShaderMaterial.new()
+	var sh := Shader.new()
+	sh.code = FLOOR_SHADER
+	fm.shader = sh
+	mesh3(fl, fm, Vector3(0, 0, 1), world)
+	# back wall and the big type case
+	mesh3(boxm(40, 12, 0.2), mat3(Color("231710"), 0.9), Vector3(0, 5, -3.6), world)
+	_build_case(world)
+	# hanging lamp shade
+	var shade := CylinderMesh.new()
+	shade.top_radius = 0.08
+	shade.bottom_radius = 0.5
+	shade.height = 0.36
+	mesh3(shade, mat3(Color("2f4a3a"), 0.4, 0.5), Vector3(0, 3.75, 1.2), world, Vector3.ZERO, false)
+	var bulb_m := mat3(Color("fff1c8"))
+	bulb_m.emission_enabled = true
+	bulb_m.emission = Color("ffd98a")
+	bulb_m.emission_energy_multiplier = 3.0
+	var bulb := SphereMesh.new()
+	bulb.radius = 0.13
+	bulb.height = 0.26
+	mesh3(bulb, bulb_m, Vector3(0, 3.55, 1.2), world, Vector3.ZERO, false)
+	mesh3(boxm(0.03, 3, 0.03), mat3(Color("111111")), Vector3(0, 5.4, 1.2), world, Vector3.ZERO, false)
+	# loose proof sheets and a stray sort on the floor
+	var paper := mat3(Color("e9dfc9"), 0.95)
+	for pp in [[Vector3(-0.6, 0.006, 1.9), 18.0], [Vector3(0.5, 0.008, 2.6), -24.0], [Vector3(3.9, 0.006, 1.2), 40.0], [Vector3(-4.3, 0.006, 2.2), -8.0]]:
+		mesh3(boxm(0.6, 0.01, 0.8), paper, pp[0], world, Vector3(0, pp[1], 0))
+	me3 = Fighter3D.new()
+	world.add_child(me3)
+	me3.setup("me")
+	foe3 = Fighter3D.new()
+	world.add_child(foe3)
+	foe3.setup("blob", Color("3b3f6b"))
+	fx3 = Node3D.new()
+	world.add_child(fx3)
+
+
+func _build_case(world: Node3D) -> void:
+	var case_root := Node3D.new()
+	case_root.position = Vector3(0, 0, -3.1)
+	world.add_child(case_root)
+	var wood := mat3(Color("5a3a22"), 0.6)
+	var inner := mat3(Color("2e1d12"), 0.9)
+	var w := 15.0
+	var h := 4.6
+	var y0 := 0.9
+	var cols_n := 16
+	var rows_n := 6
+	mesh3(boxm(w + 0.4, h + 0.4, 0.1), inner, Vector3(0, y0 + h / 2, -0.25), case_root)
+	mesh3(boxm(w + 0.5, 0.22, 0.6), wood, Vector3(0, y0 - 0.1, 0), case_root)
+	mesh3(boxm(w + 0.5, 0.22, 0.6), wood, Vector3(0, y0 + h + 0.1, 0), case_root)
+	mesh3(boxm(w + 0.6, 0.9, 0.7), mat3(Color("3e2817"), 0.7), Vector3(0, y0 - 0.55, 0.05), case_root)
+	var cw := w / cols_n
+	var rh := h / rows_n
+	for i in cols_n + 1:
+		mesh3(boxm(0.06, h, 0.5), wood, Vector3(-w / 2 + i * cw, y0 + h / 2, 0), case_root)
+	for j in rows_n:
+		mesh3(boxm(w, 0.07, 0.5), wood, Vector3(0, y0 + j * rh, 0), case_root)
+	# lead and brass sorts lying in the compartments
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = boxm(0.11, 0.15, 0.1)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1450
+	var xs := []
+	for i in cols_n:
+		for j in rows_n:
+			for n in rng.randi_range(2, 6):
+				xs.append(Transform3D(Basis(Vector3.UP, rng.randf_range(-0.6, 0.6)), Vector3(-w / 2 + (i + rng.randf_range(0.2, 0.8)) * cw, y0 + j * rh + 0.11, rng.randf_range(-0.15, 0.15))))
+	mm.instance_count = xs.size()
+	for k in xs.size():
+		mm.set_instance_transform(k, xs[k])
+		var brass := rng.randf() < 0.25
+		mm.set_instance_color(k, Color("c9a24a") if brass else Color("8e959a").darkened(rng.randf_range(0.0, 0.35)))
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = mm
+	var sm := mat3(Color.WHITE, 0.35, 0.7)
+	sm.vertex_color_use_as_albedo = true
+	mmi.material_override = sm
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	case_root.add_child(mmi)
+
+
+## Point on the floor line (z = 0.5) that appears at stage x coordinate sx.
+func floor_spot(sx: float) -> Vector3:
+	var p0 := to_stage(Vector3(0, 0, 0.5))
+	var p1 := to_stage(Vector3(1, 0, 0.5))
+	return Vector3((sx - p0.x) / max(1.0, p1.x - p0.x), 0, 0.5)
+
+
+## Screen point (stage-local) of a spot h units above a fighter's feet.
+func pt2(f: Node3D, h: float) -> Vector2:
+	return cam.unproject_position(f.global_position + Vector3(0, h * f.scale.y, 0)) / vk + vpc.position
+
+
+func to_stage(p3: Vector3) -> Vector2:
+	return cam.unproject_position(p3) / vk + vpc.position
+
+
+func _process(_delta: float) -> void:
+	if me3 == null or not stage.visible:
+		return
+	_sync(me_node, me3, home_me2, home_me3, base_fs, 0.55)
+	_sync(foe_node, foe3, home_foe2, home_foe3, base_fs * 1.1, -0.55)
+
+
+func _sync(a: Node2D, f: Node3D, home2: Vector2, home3: Vector3, base: float, yaw: float) -> void:
+	var d := a.position - home2
+	f.position = home3 + Vector3(d.x / ppu, -d.y / ppu, 0)
+	f.rotation = Vector3(0, yaw, -a.rotation)
+	var s := a.scale.x / base * SIZE3
+	f.scale = Vector3(s, s, s)
+	f.set_tint(a.modulate)
+
+
+func _build_dict_layer() -> void:
+	dict_layer = Control.new()
+	dict_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dict_layer.z_index = 40
+	dict_layer.visible = false
+	add_child(dict_layer)
+	var bg := ColorRect.new()
+	bg.color = C_WOOD
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dict_layer.add_child(bg)
+	var m := MarginContainer.new()
+	m.set_anchors_preset(Control.PRESET_FULL_RECT)
+	for side in ["left", "right", "top", "bottom"]:
+		m.add_theme_constant_override("margin_" + side, 14)
+	dict_layer.add_child(m)
+	dict_holder = VBoxContainer.new()
+	dict_holder.add_theme_constant_override("separation", 10)
+	m.add_child(dict_holder)
+	var close := btn("", close_dict)
+	close.name = "Close"
+	styled_btn(close, C_BRASS, C_INK)
+	close.add_theme_font_size_override("font_size", 24)
+	close.custom_minimum_size.y = 58
+	dict_holder.add_child(close)
+
+
+func open_dict() -> void:
+	stop_hint()
+	dict_layer.visible = true
+	log_scroll.scroll_vertical = 0
+
+
+func close_dict() -> void:
+	dict_layer.visible = false
 
 
 func _build_dict() -> void:
@@ -547,6 +839,7 @@ func _build_dict() -> void:
 	cols.add_child(dict_panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 10)
+	v.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	dict_panel.add_child(v)
 	var h := HBoxContainer.new()
 	v.add_child(h)
@@ -574,6 +867,7 @@ func _build_dict() -> void:
 	rp.add_child(recent_box)
 	log_scroll = ScrollContainer.new()
 	log_scroll.custom_minimum_size.y = 320
+	log_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	log_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(log_scroll)
 	log_box = VBoxContainer.new()
@@ -650,7 +944,21 @@ func _layout() -> void:
 	cols.columns = 2 if two else 1
 	colw = min(vw - 36.0, 680.0)
 	left.custom_minimum_size.x = colw
-	dict_panel.custom_minimum_size.x = 440.0 if two else colw
+	dict_panel.custom_minimum_size.x = 440.0 if two else 0.0
+	var want: Node = cols if two else dict_holder
+	if dict_panel.get_parent() != want:
+		dict_panel.get_parent().remove_child(dict_panel)
+		want.add_child(dict_panel)
+	dict_panel.size_flags_vertical = Control.SIZE_FILL if two else Control.SIZE_EXPAND_FILL
+	log_scroll.custom_minimum_size.y = 320.0 if two else 0.0
+	dict_btn.visible = not two
+	left.add_theme_constant_override("separation", 12 if two else 8)
+	word_panel.custom_minimum_size.y = 66 if two else 56
+	for side in ["top", "bottom"]:
+		outer.add_theme_constant_override("margin_" + side, 18 if two else 8)
+	title_lbl.add_theme_font_size_override("normal_font_size", 58 if two else 50)
+	if two:
+		dict_layer.visible = false
 	ts = floor(min(86.0, (colw - 24.0 - GAP * (COLS - 1)) / COLS))
 	var bw := COLS * ts + (COLS - 1) * GAP
 	board.custom_minimum_size = Vector2(bw, ROWS * ts + (ROWS - 1) * GAP)
@@ -670,13 +978,24 @@ func stage_floor() -> float:
 
 func _position_stage() -> void:
 	var w := colw
-	var fs := 1.9 if w > 560 else 1.35
-	me_node.scale = Vector2(fs, fs)
-	foe_node.scale = Vector2(fs * 1.1, fs * 1.1)
-	stage.custom_minimum_size.y = 270 if w > 560 else 262
-	me_node.position = Vector2(w * 0.23, stage_floor())
-	foe_node.position = Vector2(w * 0.77, stage_floor())
-	if foe_node.has_method("start_idle") and not busy:
+	var sh := 330.0 if w > 600 else 268.0
+	stage.custom_minimum_size.y = sh
+	vk = clamp(get_viewport().get_screen_transform().get_scale().x, 1.0, 2.0)
+	var inner := Vector2(w - 4.0, sh - 4.0)
+	vp.size = Vector2i(int(inner.x * vk), int(inner.y * vk))
+	vpc.size = Vector2(vp.size)
+	vpc.scale = Vector2(1.0 / vk, 1.0 / vk)
+	base_fs = 1.9 if w > 560 else 1.35
+	me_node.scale = Vector2(base_fs, base_fs)
+	foe_node.scale = Vector2(base_fs * 1.1, base_fs * 1.1)
+	home_me2 = Vector2(w * 0.23, stage_floor())
+	home_foe2 = Vector2(w * 0.77, stage_floor())
+	home_me3 = floor_spot(w * 0.23)
+	home_foe3 = floor_spot(w * 0.77)
+	ppu = max(10.0, (to_stage(home_me3 + Vector3.RIGHT) - to_stage(home_me3)).x)
+	me_node.position = home_me2
+	foe_node.position = home_foe2
+	if not busy:
 		me_node.start_idle(1.2)
 		foe_node.start_idle(0.95)
 	var iw := w * 0.44
@@ -867,6 +1186,7 @@ func spawn_foe() -> void:
 	var st := foe_stats(chap)
 	foe = {"de": FOES[k].de, "k": k, "lap": int((chap - 1) / FOES.size()), "hp": st.hp, "max": st.hp, "atk": st.atk, "every": st.every, "cd": st.every}
 	foe_node.setup(FOES[k].f, Color(FOES[k].c))
+	foe3.setup(FOES[k].f, Color(FOES[k].c))
 	foe_node.modulate = Color(1, 1, 1, 0)
 	foe_node.rotation = 0
 	foe_node.scale = me_node.scale * 1.1
@@ -904,6 +1224,7 @@ func apply_lang() -> void:
 			styled_btn(b, C_INK, C_PAPER, C_INK)
 		else:
 			styled_btn(b, Color.TRANSPARENT, C_INK, C_INK)
+	(dict_holder.get_node("Close") as Button).text = "×  " + t("close")
 	update_ui()
 	render_dict()
 
@@ -1095,7 +1416,7 @@ func _do_hint() -> void:
 		return
 	if mode == "battle":
 		php = max(1, php - HINT_HP)
-		float_text(me_node.position + Vector2(0, -150), "−" + str(HINT_HP), Color("ff8f7a"), 30)
+		float_text(pt2(me3, 2.3), "−" + str(HINT_HP), Color("ff8f7a"), 30)
 	else:
 		score = max(0, score - HINT_PTS)
 	sel = []
@@ -1399,34 +1720,65 @@ func float_text_board(pos: Vector2, text: String) -> void:
 	tw.tween_callback(l.queue_free)
 
 
-func burst(pos: Vector2, colors: Array, amount: int) -> void:
-	var p := CPUParticles2D.new()
+## One-shot 3D particle burst. rise > 0 makes the bits float up instead of falling.
+func burst(pos: Vector3, colors: Array, amount: int, rise: float = 0.0, round_bits: bool = false) -> void:
+	var p := CPUParticles3D.new()
 	p.position = pos
 	p.one_shot = true
 	p.explosiveness = 1.0
 	p.amount = amount
-	p.lifetime = 0.8
-	p.spread = 180.0
-	p.direction = Vector2(0, -1)
-	p.initial_velocity_min = 120.0
-	p.initial_velocity_max = 260.0
-	p.gravity = Vector2(0, 420)
-	p.angular_velocity_min = -360
-	p.angular_velocity_max = 360
-	p.scale_amount_min = 5.0
-	p.scale_amount_max = 10.0
+	p.lifetime = 0.9
+	p.direction = Vector3(0, 1, 0.3)
+	p.spread = 80.0
+	p.initial_velocity_min = 1.5 if rise > 0 else 2.2
+	p.initial_velocity_max = 2.5 if rise > 0 else 4.8
+	p.gravity = Vector3(0, rise * 3.0 if rise > 0 else -9.0, 0)
+	p.damping_min = 1.0
+	p.damping_max = 2.0
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.3
+	p.particle_flag_rotate_y = true
+	p.angle_min = -180
+	p.angle_max = 180
+	var m: Mesh
+	if round_bits:
+		var sp := SphereMesh.new()
+		sp.radius = 0.07
+		sp.height = 0.14
+		sp.radial_segments = 8
+		sp.rings = 4
+		m = sp
+	else:
+		m = boxm(0.12, 0.12, 0.02)
+	var mt := StandardMaterial3D.new()
+	mt.vertex_color_use_as_albedo = true
+	mt.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mt.roughness = 0.2 if round_bits else 0.8
+	mt.cull_mode = BaseMaterial3D.CULL_DISABLED
+	p.mesh = m
+	p.material_override = mt
 	var grad := Gradient.new()
 	grad.set_color(0, colors[0])
 	grad.set_color(1, Color(colors[-1], 0.0))
 	if colors.size() > 2:
 		grad.add_point(0.5, colors[1])
 	p.color_ramp = grad
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color.WHITE)
-	ramp.set_color(1, Color.WHITE)
-	fx.add_child(p)
+	fx3.add_child(p)
 	p.emitting = true
-	get_tree().create_timer(1.2).timeout.connect(p.queue_free)
+	get_tree().create_timer(1.4).timeout.connect(p.queue_free)
+
+
+## A short light pulse at an impact point.
+func flash(pos: Vector3, col: Color, energy: float = 3.0) -> void:
+	var l := OmniLight3D.new()
+	l.position = pos
+	l.light_color = col
+	l.light_energy = energy
+	l.omni_range = 3.5
+	fx3.add_child(l)
+	var tw := create_tween()
+	tw.tween_property(l, "light_energy", 0.0, 0.35)
+	tw.tween_callback(l.queue_free)
 
 
 func shake(node: CanvasItem, strength: float = 7.0) -> void:
@@ -1438,20 +1790,54 @@ func shake(node: CanvasItem, strength: float = 7.0) -> void:
 	tw.tween_property(node, "position", home, 0.05)
 
 
-func bezier(a: Vector2, ctrl: Vector2, b: Vector2, k: float) -> Vector2:
+func cam_shake(strength: float = 10.0) -> void:
+	var tw := create_tween()
+	for i in 6:
+		var k := strength * 0.012 * (1.0 - i / 6.0)
+		tw.tween_property(cam, "h_offset", randf_range(-k, k), 0.04)
+		tw.parallel().tween_property(cam, "v_offset", randf_range(-k, k) * 0.6, 0.04)
+	tw.tween_property(cam, "h_offset", 0.0, 0.05)
+	tw.parallel().tween_property(cam, "v_offset", 0.0, 0.05)
+
+
+func bezier(a: Vector3, ctrl: Vector3, b: Vector3, k: float) -> Vector3:
 	return a.lerp(ctrl, k).lerp(ctrl.lerp(b, k), k)
 
 
+## A flying lead sort with the letter on both faces.
+func sort3d(letter: String, crit: bool) -> MeshInstance3D:
+	var m := mat3(Color("f6a24a") if crit else Color("e8c45e"), 0.3, 0.75)
+	m.emission_enabled = true
+	m.emission = Color("ff7a2a") if crit else Color("b8862a")
+	m.emission_energy_multiplier = 0.5 if crit else 0.25
+	var s := MeshInstance3D.new()
+	s.mesh = boxm(0.36, 0.36, 0.16)
+	s.material_override = m
+	for face in [1.0, -1.0]:
+		var l := Label3D.new()
+		l.text = letter
+		l.font = f_sort
+		l.font_size = 96 if letter != "CH" else 64
+		l.pixel_size = 0.0028
+		l.modulate = C_INK
+		l.outline_size = 0
+		l.position = Vector3(0, 0, 0.081 * face)
+		if face < 0:
+			l.rotation_degrees = Vector3(0, 180, 0)
+		s.add_child(l)
+	return s
+
+
 func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
-	var a := me_node.position + Vector2(0, -70 * me_node.scale.y)
-	var b := foe_node.position + Vector2(0, -60 * foe_node.scale.y)
+	var sc := me3.scale.y
 	if heal > 0:
-		burst(a, [Color("e9f7d9"), Color("a8e08a"), Color("6fbf4f")], 18)
-		float_text(a + Vector2(0, -30), "+" + str(heal) + " HP", Color("a8e08a"))
+		burst(me3.position + Vector3(0, 0.6 * sc, 0.2), [Color("e9f7d9"), Color("a8e08a"), Color("6fbf4f")], 24, 1.0, true)
+		flash(me3.position + Vector3(0, 1.2 * sc, 0.8), Color("8fe07a"), 2.0)
+		float_text(pt2(me3, 2.2) + Vector2(0, -10), "+" + str(heal) + " HP", Color("a8e08a"))
 	me_node.stop_idle()
 	var home := me_node.position
 	var lunge := create_tween()
-	lunge.tween_property(me_node, "position", home + Vector2(24, 0), 0.12)
+	lunge.tween_property(me_node, "position", home + Vector2(24, -6), 0.12)
 	lunge.tween_property(me_node, "rotation", 0.12, 0.08)
 	lunge.tween_property(me_node, "position", home, 0.2)
 	lunge.parallel().tween_property(me_node, "rotation", 0.0, 0.2)
@@ -1466,69 +1852,87 @@ func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 		else:
 			letters.append(up[i])
 			i += 1
+	var target3 := foe3.position + Vector3(0, 1.0 * foe3.scale.y, 0.35)
 	var last_tw: Tween
 	for j in letters.size():
-		var pnl := Panel.new()
-		pnl.add_theme_stylebox_override("panel", box(Color("f6a24a") if crit else Color("f0cd6e"), 5, Color("8e6f2a"), 1, 8, Color(1, 0.8, 0.4, 0.7)))
-		pnl.size = Vector2(36, 36)
-		pnl.pivot_offset = Vector2(18, 18)
-		var l := lbl(letters[j], 22 if letters[j] != "CH" else 16, C_INK, f_sort)
-		l.set_anchors_preset(Control.PRESET_FULL_RECT)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		pnl.add_child(l)
-		pnl.modulate.a = 0
-		fx.add_child(pnl)
-		var start := a + Vector2(0, (j % 3 - 1) * 10)
-		var ctrl := (start + b) / 2 + Vector2(0, -90)
+		var s := sort3d(letters[j], crit)
+		s.visible = false
+		fx3.add_child(s)
+		var start := me3.position + Vector3(0.75 * sc, 1.25 * sc + (j % 3 - 1) * 0.15, 0.5)
+		var ctrl := (start + target3) / 2 + Vector3(0, 1.7, 1.4)
+		var spin := Vector3(randf_range(1.0, 2.0), randf_range(1.5, 3.0), randf_range(-1.0, 1.0)) * TAU
 		var tw := create_tween()
-		tw.tween_interval(j * 0.06)
-		tw.tween_property(pnl, "modulate:a", 1.0, 0.05)
-		tw.parallel().tween_method(func(k: float): pnl.position = bezier(start, ctrl, b, k) - Vector2(18, 18); pnl.rotation = k * TAU, 0.0, 1.0, 0.42).set_trans(Tween.TRANS_SINE)
-		tw.tween_callback(pnl.queue_free)
+		tw.tween_interval(j * 0.07)
+		tw.tween_callback(func(): s.visible = true)
+		tw.tween_method(func(k: float): s.position = bezier(start, ctrl, target3, k); s.rotation = spin * k, 0.0, 1.0, 0.46).set_trans(Tween.TRANS_SINE)
+		tw.tween_callback(s.queue_free)
 		last_tw = tw
 	if last_tw:
 		await last_tw.finished
 	var cols_fx := [Color.WHITE, Color("ffb35a"), Color("e3742f")] if crit else [Color("f3ecdc"), Color("ffd27a"), Color("c9a24a")]
-	burst(b, cols_fx, 30 if crit else 18)
-	float_text(b + Vector2(0, -20), "−" + str(dmg), Color("ffb35a") if crit else Color("ffd27a"), 46 if crit else 36)
+	burst(target3, cols_fx, 40 if crit else 24)
+	flash(target3 + Vector3(0, 0, 0.6), Color("ffb35a") if crit else Color("ffe0a0"), 4.0 if crit else 2.5)
+	float_text(pt2(foe3, 2.1), "−" + str(dmg), Color("ffb35a") if crit else Color("ffd27a"), 46 if crit else 36)
 	var fh := create_tween()
 	fh.tween_property(foe_node, "modulate", Color(1, 0.35, 0.35), 0.06)
 	fh.tween_property(foe_node, "modulate", Color.WHITE, 0.25)
 	shake(foe_node, 10.0)
-	if crit:
-		shake(scene, 9.0)
+	cam_shake(12.0 if crit else 5.0)
 	await get_tree().create_timer(0.3).timeout
 
 
 func enemy_attack() -> void:
-	var a := me_node.position + Vector2(0, -60 * me_node.scale.y)
-	var b := foe_node.position + Vector2(0, -60 * foe_node.scale.y)
 	foe_node.stop_idle()
 	var home := foe_node.position
+	var bs := foe_node.scale
 	var tw := create_tween()
 	tw.tween_property(foe_node, "position", home + Vector2(-28, 0), 0.15)
-	tw.parallel().tween_property(foe_node, "scale", foe_node.scale * 1.08, 0.15)
+	tw.parallel().tween_property(foe_node, "scale", bs * 1.08, 0.15)
 	tw.tween_property(foe_node, "position", home, 0.18)
-	tw.parallel().tween_property(foe_node, "scale", foe_node.scale, 0.18)
+	tw.parallel().tween_property(foe_node, "scale", bs, 0.18)
 	await tw.finished
 	foe_node.start_idle(0.95)
-	var ball := Panel.new()
-	var bs := box(Color("201d28"), 20, Color("5b5670"), 2, 10, Color(0, 0, 0, 0.8))
-	ball.add_theme_stylebox_override("panel", bs)
-	ball.size = Vector2(40, 40)
-	fx.add_child(ball)
-	var ctrl := (a + b) / 2 + Vector2(0, -100)
+	var ball := MeshInstance3D.new()
+	var bm := SphereMesh.new()
+	bm.radius = 0.24
+	bm.height = 0.48
+	ball.mesh = bm
+	var im := mat3(Color("15131c"), 0.05, 0.4)
+	im.rim_enabled = true
+	im.rim = 0.6
+	ball.material_override = im
+	fx3.add_child(ball)
+	var trail := CPUParticles3D.new()
+	trail.amount = 24
+	trail.lifetime = 0.35
+	trail.local_coords = false
+	trail.gravity = Vector3(0, -2, 0)
+	trail.initial_velocity_max = 0.3
+	trail.scale_amount_min = 0.5
+	trail.scale_amount_max = 1.0
+	var tm := SphereMesh.new()
+	tm.radius = 0.08
+	tm.height = 0.16
+	tm.radial_segments = 8
+	tm.rings = 4
+	trail.mesh = tm
+	trail.material_override = mat3(Color("2a2635"), 0.1, 0.2)
+	ball.add_child(trail)
+	var a := me3.position + Vector3(0, 1.1 * me3.scale.y, 0.3)
+	var b := foe3.position + Vector3(-0.3, 0.9 * foe3.scale.y, 0.6)
+	var ctrl := (a + b) / 2 + Vector3(0, 1.9, 1.0)
 	var bt := create_tween()
-	bt.tween_method(func(k: float): ball.position = bezier(b, ctrl, a, k) - Vector2(20, 20), 0.0, 1.0, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	bt.tween_method(func(k: float): ball.position = bezier(b, ctrl, a, k); ball.scale = Vector3.ONE * (1.0 + 0.25 * sin(k * PI)), 0.0, 1.0, 0.5).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	await bt.finished
 	ball.queue_free()
-	burst(a, [Color("5b5670"), Color("3b3f6b"), Color("121016")], 22)
-	float_text(a + Vector2(0, -20), "−" + str(foe.atk), Color("ff8f7a"), 40)
+	burst(a, [Color("5b5670"), Color("3b3f6b"), Color("121016")], 30, 0.0, true)
+	flash(a + Vector3(0, 0, 0.6), Color("8a7cff"), 2.0)
+	float_text(pt2(me3, 2.1), "−" + str(foe.atk), Color("ff8f7a"), 40)
 	var mh := create_tween()
 	mh.tween_property(me_node, "modulate", Color(1, 0.3, 0.3), 0.06)
 	mh.tween_property(me_node, "modulate", Color.WHITE, 0.35)
-	shake(scene, 10.0)
+	shake(me_node, 8.0)
+	cam_shake(12.0)
 	shake(tiles_root, 8.0)
 	_ink_splat()
 	await get_tree().create_timer(0.25).timeout
@@ -1555,9 +1959,11 @@ func _ink_splat() -> void:
 
 
 func foe_dies() -> void:
-	var b := foe_node.position + Vector2(0, -50 * foe_node.scale.y)
 	foe_node.stop_idle()
-	burst(b, [Color("f3ecdc"), Color("b9a888"), Color("1b1a1f")], 40)
+	var b := foe3.position + Vector3(0, 1.0 * foe3.scale.y, 0.3)
+	burst(b, [Color("f3ecdc"), Color("b9a888"), Color("1b1a1f")], 60)
+	flash(b + Vector3(0, 0, 0.6), Color("fff0c0"), 4.0)
+	cam_shake(10.0)
 	var tw := create_tween().set_parallel()
 	tw.tween_property(foe_node, "rotation", 0.5, 0.6).set_ease(Tween.EASE_IN)
 	tw.tween_property(foe_node, "scale", foe_node.scale * 0.3, 0.6).set_ease(Tween.EASE_IN)
@@ -1704,6 +2110,7 @@ func rich(text: String, size: int, font: Font = null) -> RichTextLabel:
 
 
 func render_dict() -> void:
+	dict_btn.text = str(t("dictBtn", {"n": found.size()}))
 	for ch in recent_box.get_children():
 		ch.queue_free()
 	for ch in log_box.get_children():

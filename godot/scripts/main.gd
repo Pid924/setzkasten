@@ -115,6 +115,13 @@ var snd_btn: Button
 var last_sel := 0
 var stage_h := 0.0
 var hint_path := []
+var inv := [0, 0, 0, 0, 0, 0]
+var armed := [false, false, false, false, false, false]
+var shield := 0
+var endless := false
+var item_row: HBoxContainer
+var item_btns := []
+const UMLAUTS := ["ä", "ö", "ü"]
 var hint_move := -1
 var outer: MarginContainer
 var dict_layer: Control
@@ -507,6 +514,17 @@ func _build_ui() -> void:
 	pts_lbl = lbl("", 24, C_BRASS, f_sort)
 	pts_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	wh.add_child(pts_lbl)
+	item_row = HBoxContainer.new()
+	item_row.add_theme_constant_override("separation", 6)
+	item_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	left.add_child(item_row)
+	for i in 6:
+		var ib := btn("", toggle_item.bind(i))
+		ib.add_theme_font_size_override("font_size", 18)
+		ib.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ib.clip_text = true
+		item_row.add_child(ib)
+		item_btns.append(ib)
 	var brow := HBoxContainer.new()
 	brow.add_theme_constant_override("separation", 8)
 	left.add_child(brow)
@@ -1217,6 +1235,10 @@ func new_game(m: String) -> void:
 	busy = false
 	php = 100
 	pmax = 100
+	inv = [0, 0, 0, 0, 0, 0]
+	armed = [false, false, false, false, false, false]
+	shield = 0
+	endless = false
 	editing = ""
 	stage.visible = mode == "battle"
 	call_deferred("_layout")
@@ -1309,7 +1331,8 @@ func target() -> int:
 
 func update_ui() -> void:
 	stat_score.text = str(score)
-	stat_chap.text = str(chap)
+	stat_chap.text = (str(chap) + (" / " + str(FOES.size()) if not endless else "")) if mode == "battle" else str(chap)
+	refresh_items()
 	stat_best.text = str(max(best, score))
 	stat_lives.text = str(lives) + " / 3"
 	btn_hint.text = t("hint") + (" −%d HP" % HINT_HP if mode == "battle" else " −%d" % HINT_PTS)
@@ -1327,7 +1350,8 @@ func update_ui() -> void:
 		foe_hp.max_value = foe.max
 		foe_hp.value = foe.hp
 		foe_hp_lbl.text = t("hp") + " " + str(foe.hp) + " / " + str(foe.max)
-		foe_atk_lbl.text = t("atkNext", {"a": foe.atk}) if foe.cd <= 1 else t("atkIn", {"n": foe.cd, "a": foe.atk})
+		var shown_atk: Variant = foe.atk if shield <= 0 else "%d−%d" % [foe.atk, shield]
+		foe_atk_lbl.text = t("atkNext", {"a": shown_atk}) if foe.cd <= 1 else t("atkIn", {"n": foe.cd, "a": shown_atk})
 	else:
 		chapinfo.text = t("chapInfo", {"c": chap, "s": chap_score, "t": target()})
 	update_word()
@@ -1358,6 +1382,63 @@ func dmg_of(p: int) -> int:
 	return max(1, int(round(p / 10.0)))
 
 
+## Damage of a word in battle with the armed items applied (+15 first, then ×2 on the total).
+func battle_dmg(pts: int) -> int:
+	var d := dmg_of(pts)
+	if armed[0]:
+		d += 15
+	if armed[1]:
+		d *= 2
+	return d
+
+
+func incoming_dmg() -> int:
+	return max(0, foe.atk - shield) if not foe.is_empty() else 0
+
+
+func toggle_item(i: int) -> void:
+	if busy or inv[i] <= 0:
+		return
+	armed[i] = not armed[i]
+	if armed[i]:
+		toast(t("itD" + str(i + 1)))
+	refresh_items()
+	update_word()
+
+
+func refresh_items() -> void:
+	if item_row == null:
+		return
+	var any := false
+	for i in 6:
+		var b: Button = item_btns[i]
+		b.visible = inv[i] > 0
+		any = any or inv[i] > 0
+		b.text = str(t("itS" + str(i + 1))) + ((" ·" + str(inv[i])) if inv[i] > 1 else "")
+		b.tooltip_text = t("itD" + str(i + 1))
+		if armed[i]:
+			styled_btn(b, C_BRASS, C_INK, C_PAPER)
+		else:
+			styled_btn(b, C_WOOD2, C_PAPER, C_EDGE)
+	var vis: bool = mode == "battle" and any
+	if item_row.visible != vis:
+		item_row.visible = vis
+		call_deferred("_layout")
+
+
+func gain_items(used: Array) -> void:
+	var got := []
+	for x in used:
+		if x.l in UMLAUTS:
+			var k := randi() % 6
+			inv[k] += 1
+			got.append(t("it" + str(k + 1)))
+	if not got.is_empty():
+		sfx.play("heal", 1.3)
+		toast(t("itemGot", {"i": ", ".join(got)}))
+		refresh_items()
+
+
 func toggle_sound() -> void:
 	sfx.muted = not sfx.muted
 	set_setting("mute", sfx.muted)
@@ -1377,7 +1458,11 @@ func update_word() -> void:
 		var h := 0
 		for x in sel:
 			h += x.heal
-		pts_lbl.text = str(dmg_of(calc(sel))) + " " + t("dmg") + (("  +" + str(h) + " HP") if h > 0 else "")
+		if armed[2]:
+			h += 20
+		if armed[4]:
+			h += int(round(battle_dmg(calc(sel)) * 0.5))
+		pts_lbl.text = str(battle_dmg(calc(sel))) + " " + t("dmg") + (("  +" + str(h) + " HP") if h > 0 else "")
 	elif ok:
 		pts_lbl.text = "+" + str(calc(sel))
 	else:
@@ -1687,16 +1772,36 @@ func submit() -> void:
 	refill(reward, last.c, 0.18 if used.size() <= 3 else 0.0)
 	update_word()
 	if mode == "battle":
-		var dmg := dmg_of(pts)
+		var dmg := battle_dmg(pts)
+		var extra: bool = armed[3]
+		if armed[1]:
+			crit = true
+		if armed[2]:
+			heal += 20
+		if armed[4]:
+			heal += int(round(dmg * 0.5))
+		if armed[5]:
+			shield += 10
+		for i in 6:
+			if armed[i]:
+				inv[i] -= 1
+				armed[i] = false
 		if heal > 0:
 			php = min(pmax, php + heal)
 		await player_attack(w, dmg, crit, heal)
 		foe.hp = max(0, foe.hp - dmg)
+		gain_items(used)
 		update_ui()
 		if foe.hp <= 0:
 			await foe_dies()
 			busy = false
 			foe_defeated()
+			return
+		if extra:
+			toast(t("itemExtra"))
+			sfx.play("hint", 1.5)
+			busy = false
+			update_ui()
 			return
 		await enemy_turn()
 		busy = false
@@ -1785,21 +1890,34 @@ func enemy_turn() -> void:
 	update_ui()
 	if foe.cd <= 0:
 		foe.cd = foe.every
+		var hit := incoming_dmg()
 		await enemy_attack()
-		php = max(0, php - foe.atk)
-		toast(t("foeHits", {"n": foe_name(), "a": foe.atk}))
+		if shield > 0:
+			shield = 0
+		php = max(0, php - hit)
+		toast(t("foeHits", {"n": foe_name(), "a": hit}))
 		update_ui()
 
 
 func foe_defeated() -> void:
 	var old := foe_name() + " (" + foe_sub() + ")"
+	var was_last := chap == FOES.size() and not endless
 	chap += 1
+	pmax += 20
 	php = min(pmax, php + 20)
 	spawn_foe()
 	update_ui()
 	sfx.play("win")
+	if was_last:
+		if score > best:
+			best = score
+			set_setting(best_key(), best)
+		show_dialog("Gesamtsieg!", t("finalB", {"o": old, "s": score, "n": found.size(), "m": pmax}), [
+			[t("again"), func(): pick_mode(false), false],
+			[t("endless"), func(): self.endless = true; update_ui(); close_overlay(), true]])
+		return
 	var st := foe_stats(chap)
-	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every}), [[t("fight"), close_overlay, true]])
+	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "m": pmax, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every}), [[t("fight"), close_overlay, true]])
 
 
 func next_chapter() -> void:
@@ -2186,7 +2304,10 @@ func enemy_attack() -> void:
 	await last.finished
 	sfx.play("hurt")
 	flash(a + Vector3(0, 0, 0.6), Color("8a7cff"), 2.0)
-	float_text(pt2(me3, 2.1), "−" + str(foe.atk), Color("ff8f7a"), 46 if heavy else 40)
+	float_text(pt2(me3, 2.1), "−" + str(incoming_dmg()), Color("ff8f7a"), 46 if heavy else 40)
+	if shield > 0:
+		flash(me3.position + Vector3(0.5, 1.2 * me3.scale.y, 0.8), Color("7ac8ff"), 3.0)
+		sfx.play("hit_m", 1.6, -6.0)
 	var mh := create_tween()
 	mh.tween_property(me_node, "modulate", Color(1, 0.3, 0.3), 0.06)
 	mh.tween_property(me_node, "modulate", Color.WHITE, 0.35)

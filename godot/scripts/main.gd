@@ -113,6 +113,7 @@ var dict_btn: Button
 var sfx: Node
 var snd_btn: Button
 var last_sel := 0
+var stage_h := 0.0
 var outer: MarginContainer
 var dict_layer: Control
 var dict_holder: VBoxContainer
@@ -982,15 +983,56 @@ func _layout() -> void:
 	for side in ["top", "bottom"]:
 		outer.add_theme_constant_override("margin_" + side, 18 if two else 8)
 	title_lbl.add_theme_font_size_override("normal_font_size", 58 if two else 50)
+	mode_lbl.visible = two
+	for k in stat_labels:
+		(stat_labels[k] as Label).add_theme_font_size_override("font_size", 18 if two else 15)
+	for v in [stat_score, stat_chap, stat_lives, stat_best]:
+		v.add_theme_font_size_override("font_size", 30 if two else 25)
 	if two:
 		dict_layer.visible = false
 	ts = floor(min(86.0, (colw - 24.0 - GAP * (COLS - 1)) / COLS))
 	var bw := COLS * ts + (COLS - 1) * GAP
 	board.custom_minimum_size = Vector2(bw, ROWS * ts + (ROWS - 1) * GAP)
+	stage_h = 0.0
 	_position_stage()
+	if not two:
+		call_deferred("_fit_height")
 	ov_body.custom_minimum_size.x = min(500.0, vw - 120.0)
 	ov_body.get_parent().get_parent().custom_minimum_size.x = min(560.0, vw - 40.0)
 	toast_panel.custom_minimum_size.x = min(560.0, vw - 40.0)
+	for c in COLS:
+		for r in ROWS:
+			if grid.size() == COLS and grid[c][r]:
+				place(grid[c][r], c, r, false)
+
+
+## Phones: shrink the battle stage, then the tiles, until the whole game fits the screen height.
+func _fit_height() -> void:
+	if cols.columns == 2:
+		return
+	var avail := get_viewport_rect().size.y - 16.0
+	var cur_stage := stage.custom_minimum_size.y if stage.visible else 0.0
+	var tray_h := tray.get_combined_minimum_size().y
+	var pad := tray_h - board.custom_minimum_size.y
+	var other := left.get_combined_minimum_size().y - cur_stage - tray_h
+	var room := avail - other
+	var need := func(size: float) -> float: return ROWS * size + (ROWS - 1) * GAP + pad
+	var new_ts := ts
+	var new_sh := 268.0
+	if stage.visible:
+		if new_sh + need.call(new_ts) > room:
+			new_sh = max(190.0, room - need.call(new_ts))
+		if new_sh + need.call(new_ts) > room:
+			new_ts = max(48.0, floor((room - new_sh - pad - (ROWS - 1) * GAP) / ROWS))
+	elif need.call(new_ts) > room:
+		new_ts = max(48.0, floor((room - pad - (ROWS - 1) * GAP) / ROWS))
+	if new_ts == ts and (not stage.visible or new_sh == stage.custom_minimum_size.y):
+		return
+	ts = new_ts
+	board.custom_minimum_size = Vector2(COLS * ts + (COLS - 1) * GAP, ROWS * ts + (ROWS - 1) * GAP)
+	if stage.visible:
+		stage_h = new_sh
+		_position_stage()
 	for c in COLS:
 		for r in ROWS:
 			if grid.size() == COLS and grid[c][r]:
@@ -1003,7 +1045,7 @@ func stage_floor() -> float:
 
 func _position_stage() -> void:
 	var w := colw
-	var sh := 330.0 if w > 600 else 268.0
+	var sh: float = stage_h if stage_h > 0.0 else (330.0 if w > 600 else 268.0)
 	stage.custom_minimum_size.y = sh
 	vk = clamp(get_viewport().get_screen_transform().get_scale().x, 1.0, 2.0)
 	var inner := Vector2(w - 4.0, sh - 4.0)
@@ -1172,6 +1214,7 @@ func new_game(m: String) -> void:
 	pmax = 100
 	editing = ""
 	stage.visible = mode == "battle"
+	call_deferred("_layout")
 	prog.visible = mode != "battle"
 	stat_lives_box.visible = mode != "battle"
 	if mode == "battle":

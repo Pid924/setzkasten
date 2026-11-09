@@ -114,6 +114,8 @@ var sfx: Node
 var snd_btn: Button
 var last_sel := 0
 var stage_h := 0.0
+var hint_path := []
+var hint_move := -1
 var outer: MarginContainer
 var dict_layer: Control
 var dict_holder: VBoxContainer
@@ -1468,6 +1470,15 @@ func _unhandled_input(ev: InputEvent) -> void:
 func _on_hint() -> void:
 	if busy:
 		return
+	if _hint_active():
+		if mode == "battle" and php <= HINT_HP:
+			toast(t("hintLow"))
+			return
+		if mode != "battle" and score < HINT_PTS:
+			toast(t("hintPts"))
+			return
+		_hint_pick()
+		return
 	if mode == "battle" and php <= HINT_HP:
 		toast(t("hintLow"))
 		return
@@ -1487,12 +1498,17 @@ func stop_hint() -> void:
 	hint_tweens.clear()
 
 
-func _do_hint() -> void:
-	var path := find_word(5)
-	if path.is_empty():
-		toast(t("noWords"))
-		shuffle(false)
-		return
+## True while the last hint's word is still on the board and no turn has passed since.
+func _hint_active() -> bool:
+	if hint_path.is_empty() or hint_move != moves:
+		return false
+	for x in hint_path:
+		if grid[x.c][x.r] != x:
+			return false
+	return true
+
+
+func _pay_hint() -> void:
 	if mode == "battle":
 		php = max(1, php - HINT_HP)
 		float_text(pt2(me3, 2.3), "−" + str(HINT_HP), Color("ff8f7a"), 30)
@@ -1500,10 +1516,11 @@ func _do_hint() -> void:
 		sfx.play("grunt", 1.2, -4.0)
 	else:
 		score = max(0, score - HINT_PTS)
-	sel = []
-	update_ui()
+
+
+func _wiggle(tiles: Array) -> void:
 	stop_hint()
-	for x in path:
+	for x in tiles:
 		var n: Panel = x.node
 		var tw := create_tween().set_loops()
 		tw.tween_property(n, "rotation", 0.15, 0.08)
@@ -1511,6 +1528,37 @@ func _do_hint() -> void:
 		tw.tween_property(n, "rotation", 0.0, 0.08)
 		tw.tween_interval(0.35)
 		hint_tweens.append([tw, n])
+
+
+## Second and later hints in the same turn: select the next letter of the hinted word.
+func _hint_pick() -> void:
+	var k := 0
+	while k < sel.size() and k < hint_path.size() and sel[k] == hint_path[k]:
+		k += 1
+	if k >= hint_path.size():
+		return
+	_pay_hint()
+	sel = hint_path.slice(0, k + 1)
+	update_word()
+	update_ui()
+	_wiggle(hint_path.slice(k + 1))
+	sfx.play("hint", 1.25)
+	toast(t("hintAuto", {"l": "CH" if hint_path[k].l == "ch" else hint_path[k].l.to_upper(), "n": hint_path.size() - k - 1}))
+
+
+func _do_hint() -> void:
+	var path := find_word(5)
+	if path.is_empty():
+		toast(t("noWords"))
+		shuffle(false)
+		return
+	_pay_hint()
+	sel = []
+	update_word()
+	update_ui()
+	_wiggle(path)
+	hint_path = path
+	hint_move = moves
 	sfx.play("hint")
 	toast(t("hintToast", {"l": path[0].l.to_upper(), "n": path.size()}))
 

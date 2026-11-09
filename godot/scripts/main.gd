@@ -5,6 +5,8 @@ extends Control
 const Fighter := preload("res://scripts/fighter.gd")
 const Fighter3D := preload("res://scripts/fighter3d.gd")
 const Sfx := preload("res://scripts/sfx.gd")
+const ItemIcon := preload("res://scripts/item_icon.gd")
+const N_ITEMS := 10
 const SIZE3 := 1.35
 
 const COLS := 7
@@ -115,11 +117,14 @@ var snd_btn: Button
 var last_sel := 0
 var stage_h := 0.0
 var hint_path := []
-var inv := [0, 0, 0, 0, 0, 0]
-var armed := [false, false, false, false, false, false]
+var inv := []
+var armed := []
+var used_turn := []
 var shield := 0
 var endless := false
-var item_row: HBoxContainer
+var item_row: HFlowContainer
+var item_info: Label
+var item_sig := ""
 var item_btns := []
 const UMLAUTS := ["ä", "ö", "ü"]
 var hint_move := -1
@@ -514,17 +519,27 @@ func _build_ui() -> void:
 	pts_lbl = lbl("", 24, C_BRASS, f_sort)
 	pts_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	wh.add_child(pts_lbl)
-	item_row = HBoxContainer.new()
-	item_row.add_theme_constant_override("separation", 6)
-	item_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	item_row = HFlowContainer.new()
+	item_row.add_theme_constant_override("h_separation", 6)
+	item_row.add_theme_constant_override("v_separation", 6)
+	item_row.alignment = FlowContainer.ALIGNMENT_CENTER
 	left.add_child(item_row)
-	for i in 6:
-		var ib := btn("", toggle_item.bind(i))
-		ib.add_theme_font_size_override("font_size", 18)
-		ib.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		ib.clip_text = true
+	for i in N_ITEMS:
+		var ib := ItemIcon.new()
+		ib.font = f_sort
+		ib.pressed.connect(use_item.bind(i))
 		item_row.add_child(ib)
 		item_btns.append(ib)
+	var help := btn("?", show_item_help)
+	help.custom_minimum_size = Vector2(44, 60)
+	styled_btn(help, Color.TRANSPARENT, C_PAPER, C_EDGE)
+	help.add_theme_font_size_override("font_size", 24)
+	item_row.add_child(help)
+	item_info = lbl("", 16, C_MUTED)
+	item_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	item_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	item_info.visible = false
+	left.add_child(item_info)
 	var brow := HBoxContainer.new()
 	brow.add_theme_constant_override("separation", 8)
 	left.add_child(brow)
@@ -1235,8 +1250,13 @@ func new_game(m: String) -> void:
 	busy = false
 	php = 100
 	pmax = 100
-	inv = [0, 0, 0, 0, 0, 0]
-	armed = [false, false, false, false, false, false]
+	inv = []
+	armed = []
+	used_turn = []
+	for i in N_ITEMS:
+		inv.append(0)
+		armed.append(false)
+		used_turn.append(-1)
 	shield = 0
 	endless = false
 	editing = ""
@@ -1382,13 +1402,16 @@ func dmg_of(p: int) -> int:
 	return max(1, int(round(p / 10.0)))
 
 
-## Damage of a word in battle with the armed items applied (+15 first, then ×2 on the total).
-func battle_dmg(pts: int) -> int:
+## Damage of a word in battle with the armed attack items: +15 and +3 per letter first, then ×2 on the total.
+func battle_dmg(pts: int, letters: int) -> int:
 	var d := dmg_of(pts)
-	if armed[0]:
-		d += 15
-	if armed[1]:
-		d *= 2
+	if armed.size() == N_ITEMS:
+		if armed[5]:
+			d += 15
+		if armed[7]:
+			d += 3 * letters
+		if armed[6]:
+			d *= 2
 	return d
 
 
@@ -1396,43 +1419,189 @@ func incoming_dmg() -> int:
 	return max(0, foe.atk - shield) if not foe.is_empty() else 0
 
 
-func toggle_item(i: int) -> void:
-	if busy or inv[i] <= 0:
+func item_name(i: int) -> String:
+	return str(t("itN" + str(i)))
+
+
+## Instant items (0-4) act on tap; attack items (5-9) toggle and fire with the next word.
+## The same item can be used only once per turn.
+func use_item(i: int) -> void:
+	if busy or overlay.visible or inv[i] <= 0:
 		return
-	armed[i] = not armed[i]
-	if armed[i]:
-		toast(t("itD" + str(i + 1)))
+	if i >= 5:
+		armed[i] = not armed[i]
+		item_info.text = item_name(i) + ": " + str(t("itD" + str(i))) + ("" if armed[i] else "  (" + str(t("itOff")) + ")")
+		item_info.visible = true
+		sfx.play("pick", 1.4 if armed[i] else 0.8)
+		refresh_items()
+		update_word()
+		return
+	if used_turn[i] == moves:
+		sfx.play("bad")
+		toast(t("itOnce"))
+		return
+	stop_hint()
+	var ok := true
+	match i:
+		0:
+			php = min(pmax, php + 20)
+			sfx.play("heal")
+			burst(me3.position + Vector3(0, 0.6 * me3.scale.y, 0.2), [Color("e9f7d9"), Color("a8e08a"), Color("6fbf4f")], 24, 1.0, true)
+			float_text(pt2(me3, 2.2), "+20 HP", Color("a8e08a"))
+		1:
+			shield += 10
+			sfx.play("hit_m", 1.6, -4.0)
+			flash(me3.position + Vector3(0.5, 1.2 * me3.scale.y, 0.8), Color("7ac8ff"), 3.0)
+		2:
+			var plain := []
+			for col in grid:
+				for x in col:
+					if not x.bonus and not x.heal and not x.ink:
+						plain.append(x)
+			_reletter(plain)
+		3:
+			var dead := dead_tiles()
+			dead.shuffle()
+			if dead.is_empty():
+				ok = false
+				toast(t("itNoDead"))
+			else:
+				_reletter(dead.slice(0, 6))
+		4:
+			var plain := []
+			for col in grid:
+				for x in col:
+					if not x.bonus and not x.heal and not x.ink:
+						plain.append(x)
+			if plain.is_empty():
+				ok = false
+			else:
+				var x: Dictionary = plain[randi() % plain.size()]
+				var r := randi() % 3
+				if r == 0:
+					x.bonus = 2
+				elif r == 1:
+					x.bonus = 3
+				else:
+					x.heal = 6 + chap
+				sfx.play("hint", 1.3)
+				var tw := create_tween()
+				tw.tween_property(x.node, "scale", Vector2(1.3, 1.3), 0.15)
+				tw.tween_property(x.node, "scale", Vector2.ONE, 0.2)
+	if not ok:
+		return
+	inv[i] -= 1
+	used_turn[i] = moves
+	sel = []
+	item_info.text = item_name(i) + ": " + str(t("itD" + str(i)))
+	item_info.visible = true
+	update_ui()
 	refresh_items()
-	update_word()
+
+
+## Gives each tile a new random letter with a little flip, then makes sure a word exists.
+func _reletter(tiles: Array) -> void:
+	sfx.play("shuffle")
+	for x in tiles:
+		x.l = rand_letter()
+		var n: Control = x.node
+		var tw := create_tween()
+		tw.tween_property(n, "scale:x", 0.0, 0.1)
+		tw.tween_callback(paint.bind(x))
+		tw.tween_property(n, "scale:x", 1.0, 0.12)
+	ensure_playable()
+
+
+## Tiles that are not part of any word on the board.
+func dead_tiles() -> Array:
+	var live := {}
+	for col in grid:
+		for x in col:
+			_dfs_live(x, "", [], {}, live)
+	var out := []
+	for col in grid:
+		for x in col:
+			if not live.has(x.id):
+				out.append(x)
+	return out
+
+
+func _dfs_live(x: Dictionary, pre: String, path: Array, seen: Dictionary, live: Dictionary) -> void:
+	var w: String = pre + x.l
+	if not has_prefix(w):
+		return
+	path.append(x)
+	seen[x.id] = true
+	if w.length() >= 3 and word_set.has(w):
+		for p in path:
+			live[p.id] = true
+	if path.size() < 7:
+		for dc in [-1, 0, 1]:
+			for dr in [-1, 0, 1]:
+				var c: int = x.c + dc
+				var r: int = x.r + dr
+				if c < 0 or r < 0 or c >= COLS or r >= ROWS:
+					continue
+				var u = grid[c][r]
+				if u and not seen.has(u.id):
+					_dfs_live(u, w, path, seen, live)
+	path.pop_back()
+	seen.erase(x.id)
 
 
 func refresh_items() -> void:
-	if item_row == null:
+	if item_row == null or inv.size() != N_ITEMS:
 		return
 	var any := false
-	for i in 6:
-		var b: Button = item_btns[i]
+	for i in N_ITEMS:
+		var b = item_btns[i]
 		b.visible = inv[i] > 0
 		any = any or inv[i] > 0
-		b.text = str(t("itS" + str(i + 1))) + ((" ·" + str(inv[i])) if inv[i] > 1 else "")
-		b.tooltip_text = t("itD" + str(i + 1))
-		if armed[i]:
-			styled_btn(b, C_BRASS, C_INK, C_PAPER)
-		else:
-			styled_btn(b, C_WOOD2, C_PAPER, C_EDGE)
+		b.tooltip_text = item_name(i) + ": " + str(t("itD" + str(i)))
+		b.refresh(i, inv[i], armed[i], i < 5 and used_turn[i] == moves)
 	var vis: bool = mode == "battle" and any
-	if item_row.visible != vis:
-		item_row.visible = vis
+	if not vis:
+		item_info.visible = false
+	item_row.visible = vis
+	var n_vis := 0
+	for v in inv:
+		if v > 0:
+			n_vis += 1
+	var sig := "%s|%s|%d|%d" % [vis, item_info.visible, n_vis, item_info.text.length() / 30]
+	if sig != item_sig:
+		item_sig = sig
 		call_deferred("_layout")
+
+
+func show_item_help() -> void:
+	var items := []
+	for group in [[0, 5, "itGroupA"], [5, 10, "itGroupB"]]:
+		var gl := lbl(str(t(group[2])), 20, C_RUBRIC, f_bold)
+		items.append(gl)
+		for i in range(group[0], group[1]):
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 10)
+			var ic := ItemIcon.new()
+			ic.font = f_sort
+			ic.disabled = true
+			ic.refresh(i, 1, false, false)
+			row.add_child(ic)
+			var d := lbl(item_name(i) + ": " + str(t("itD" + str(i))), 17, C_INK)
+			d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			d.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			row.add_child(d)
+			items.append(row)
+	show_dialog(str(t("itHelpT")), str(t("itHelpB")), [[t("close"), close_overlay, true]], items)
 
 
 func gain_items(used: Array) -> void:
 	var got := []
 	for x in used:
 		if x.l in UMLAUTS:
-			var k := randi() % 6
+			var k := randi() % N_ITEMS
 			inv[k] += 1
-			got.append(t("it" + str(k + 1)))
+			got.append(item_name(k))
 	if not got.is_empty():
 		sfx.play("heal", 1.3)
 		toast(t("itemGot", {"i": ", ".join(got)}))
@@ -1458,11 +1627,10 @@ func update_word() -> void:
 		var h := 0
 		for x in sel:
 			h += x.heal
-		if armed[2]:
-			h += 20
-		if armed[4]:
-			h += int(round(battle_dmg(calc(sel)) * 0.5))
-		pts_lbl.text = str(battle_dmg(calc(sel))) + " " + t("dmg") + (("  +" + str(h) + " HP") if h > 0 else "")
+		var bd := battle_dmg(calc(sel), w.length())
+		if armed.size() == N_ITEMS and armed[9]:
+			h += int(round(bd * 0.5))
+		pts_lbl.text = str(bd) + " " + t("dmg") + (("  +" + str(h) + " HP") if h > 0 else "")
 	elif ok:
 		pts_lbl.text = "+" + str(calc(sel))
 	else:
@@ -1772,20 +1940,18 @@ func submit() -> void:
 	refill(reward, last.c, 0.18 if used.size() <= 3 else 0.0)
 	update_word()
 	if mode == "battle":
-		var dmg := battle_dmg(pts)
-		var extra: bool = armed[3]
-		if armed[1]:
+		var dmg := battle_dmg(pts, w.length())
+		var extra: bool = armed[8]
+		if armed[6]:
 			crit = true
-		if armed[2]:
-			heal += 20
-		if armed[4]:
+		if armed[9]:
 			heal += int(round(dmg * 0.5))
-		if armed[5]:
-			shield += 10
-		for i in 6:
+		for i in N_ITEMS:
 			if armed[i]:
 				inv[i] -= 1
 				armed[i] = false
+		item_info.visible = false
+		refresh_items()
 		if heal > 0:
 			php = min(pmax, php + heal)
 		await player_attack(w, dmg, crit, heal)

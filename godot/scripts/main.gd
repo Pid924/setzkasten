@@ -7,6 +7,7 @@ const Fighter3D := preload("res://scripts/fighter3d.gd")
 const Sfx := preload("res://scripts/sfx.gd")
 const ItemIcon := preload("res://scripts/item_icon.gd")
 const SwordBtn := preload("res://scripts/sword_btn.gd")
+const IconBtn := preload("res://scripts/icon_btn.gd")
 ## Hint word 1 / word 2 frame colours (a tile in both words shows both frames).
 const HINT_COLS := [Color("ff7a1a"), Color("b84dff")]
 const N_ITEMS := 10
@@ -29,7 +30,11 @@ const FOES := [
 	{"de": "Tintenklecks", "c": "3b3f6b", "f": "blob"}, {"de": "Bücherlaus", "c": "8a7a52", "f": "bug"},
 	{"de": "Druckfehlerteufel", "c": "a3352a", "f": "horns"}, {"de": "Papiertiger", "c": "d8c49a", "f": "stripes"},
 	{"de": "Rostgolem", "c": "9a5a32", "f": "square"}, {"de": "Schattenschrift", "c": "4b4553", "f": "ghost"},
-	{"de": "Zensor", "c": "55606b", "f": "crown"}, {"de": "Bleidrache", "c": "6b7378", "f": "dragon"}]
+	{"de": "Zensor", "c": "55606b", "f": "crown"}, {"de": "Bleidrache", "c": "6b7378", "f": "dragon"},
+	{"de": "Walzenkrake", "c": "5b2a5e", "f": "octo"}, {"de": "Eiserne Presse", "c": "3c4148", "f": "press"}]
+## Two rounds of all foes; the second round gives each turn TURN_SECS seconds.
+const ROUNDS := 2
+const TURN_SECS := 20.0
 
 # palette: walnut type case, lead sorts, proof paper, brass and rubrication red
 const C_WOOD := Color("2a1d15")
@@ -152,6 +157,13 @@ var pts_lbl: Label
 var word_panel: PanelContainer
 var btn_submit: Button
 var sword: Button
+var ic_hint: Button
+var ic_shuffle: Button
+var ic_clear: Button
+var timer_lbl: Label
+var turn_left := 0.0
+var timer_move := -1
+var _last_sec := -1
 var btn_clear: Button
 var btn_hint: Button
 var btn_shuffle: Button
@@ -657,6 +669,27 @@ func _build_stage() -> void:
 	sword.pressed.connect(submit)
 	sword.z_index = 6
 	stage.add_child(sword)
+	for k in ["hint", "shuffle", "clear"]:
+		var ib := IconBtn.new()
+		ib.icon_kind = k
+		ib.z_index = 6
+		stage.add_child(ib)
+		if k == "hint":
+			ib.pressed.connect(_on_hint)
+			ic_hint = ib
+		elif k == "shuffle":
+			ib.pressed.connect(_on_shuffle)
+			ic_shuffle = ib
+		else:
+			ib.pressed.connect(func(): sel = []; update_word())
+			ic_clear = ib
+	timer_lbl = lbl("", 28, C_PAPER, f_sort)
+	timer_lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	timer_lbl.add_theme_constant_override("outline_size", 8)
+	timer_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	timer_lbl.visible = false
+	timer_lbl.z_index = 6
+	stage.add_child(timer_lbl)
 	var a: Array = mk_info.call(true)
 	me_info = a[0]
 	me_name_lbl = a[1]
@@ -869,8 +902,52 @@ func to_stage(p3: Vector3) -> Vector2:
 func _process(_delta: float) -> void:
 	if me3 == null or not stage.visible:
 		return
+	_tick_timer(_delta)
 	_sync(me_node, me3, home_me2, home_me3, base_fs, 0.55)
 	_sync(foe_node, foe3, home_foe2, home_foe3, base_fs * 1.1, -0.55)
+
+
+func _tick_timer(delta: float) -> void:
+	if not timed() or php <= 0:
+		timer_lbl.visible = false
+		return
+	timer_lbl.visible = true
+	if timer_move != moves:
+		timer_move = moves
+		turn_left = TURN_SECS
+	var paused: bool = busy or overlay.visible or (dict_layer != null and dict_layer.visible)
+	if not paused:
+		turn_left -= delta
+	var sec := int(ceil(max(0.0, turn_left)))
+	timer_lbl.text = str(sec)
+	timer_lbl.add_theme_color_override("font_color", Color("ff6a50") if sec <= 5 else C_PAPER)
+	if sec != _last_sec:
+		_last_sec = sec
+		if sec <= 5 and sec > 0 and not paused:
+			sfx.play("tap", 1.6)
+			timer_lbl.pivot_offset = timer_lbl.size / 2
+			var tw := create_tween()
+			tw.tween_property(timer_lbl, "scale", Vector2(1.35, 1.35), 0.08)
+			tw.tween_property(timer_lbl, "scale", Vector2.ONE, 0.2)
+	if turn_left <= 0.0 and not paused:
+		_time_up()
+
+
+## Out of time: the word is dropped and the enemy gets its turn.
+func _time_up() -> void:
+	busy = true
+	stop_hint()
+	clear_hint_marks()
+	sel = []
+	update_word()
+	moves += 1
+	sfx.play("bad")
+	toast(t("timeUp"))
+	await enemy_turn()
+	busy = false
+	update_word()
+	update_ui()
+	check_over()
 
 
 func _sync(a: Node2D, f: Node3D, home2: Vector2, home3: Vector3, base: float, yaw: float) -> void:
@@ -1134,6 +1211,12 @@ func _position_stage() -> void:
 	foe_info.custom_minimum_size.x = iw
 	foe_info.size = Vector2(iw, 0)
 	sword.position = Vector2(w / 2 - sword.size.x / 2, sh - sword.size.y - 34)
+	var iy := sh - 3 * 52.0 - 6
+	for ib in [ic_hint, ic_shuffle, ic_clear]:
+		ib.position = Vector2(6, iy)
+		iy += 52.0
+	timer_lbl.position = Vector2(w / 2 - 40, sh * 0.42)
+	timer_lbl.size = Vector2(80, 40)
 
 
 # ---------------- tiles ----------------
@@ -1344,8 +1427,39 @@ func new_game(m: String) -> void:
 	apply_lang()
 
 
-func foe_stats(s: int) -> Dictionary:
-	return {"hp": 50 + 35 * (s - 1) + 6 * (s - 1) * (s - 1), "atk": 5 + 3 * (s - 1), "every": 3 if s <= 2 else 2}
+func foe_stats(c: int) -> Dictionary:
+	var s := stage_no(c)
+	var rnd := round_no(c) - 1
+	var hp := 50 + 35 * (s - 1) + 6 * (s - 1) * (s - 1)
+	return {"hp": int(hp * (1.0 + 0.5 * rnd)), "atk": 5 + 3 * (s - 1) + 4 * rnd, "every": 3 if s <= 2 else 2}
+
+
+## Stage number inside the current round (1..FOES.size()).
+func stage_no(c: int = -1) -> int:
+	if c < 0:
+		c = chap
+	return (c - 1) % FOES.size() + 1
+
+
+func round_no(c: int = -1) -> int:
+	if c < 0:
+		c = chap
+	return int((c - 1) / FOES.size()) + 1
+
+
+## Round 2 of Kampf: every player turn has a time limit.
+func timed() -> bool:
+	return mode == "battle" and round_no() >= 2
+
+
+func _sync_icons() -> void:
+	if ic_hint == null:
+		return
+	ic_hint.set_off(btn_hint.disabled)
+	ic_shuffle.set_off(busy)
+	ic_clear.set_off(busy or sel.is_empty())
+	for ib in [ic_hint, ic_shuffle, ic_clear]:
+		ib.visible = mode == "battle"
 
 
 func foe_name() -> String:
@@ -1411,16 +1525,17 @@ func target() -> int:
 
 func update_ui() -> void:
 	stat_score.text = str(score)
-	stat_chap.text = (str(chap) + (" / " + str(FOES.size()) if not endless else "")) if mode == "battle" else str(chap)
+	stat_chap.text = ((t("round2") + " · " if round_no() > 1 else "") + str(stage_no()) + " / " + str(FOES.size())) if mode == "battle" else str(chap)
 	refresh_items()
 	stat_best.text = str(max(best, score))
 	stat_lives.text = str(lives) + " / 3"
 	btn_hint.text = t("hint") + (" −%d HP" % HINT_HP if mode == "battle" else " −%d" % HINT_PTS)
 	btn_hint.disabled = busy or hint_move == moves
+	_sync_icons()
 	prog.max_value = target()
 	prog.value = min(chap_score, target())
 	if mode == "battle" and not foe.is_empty():
-		chapinfo.text = t("stageInfo", {"c": chap, "n": foe_name() + " (" + foe_sub() + ")"})
+		chapinfo.text = t("stageInfo", {"c": stage_no(), "n": foe_name() + " (" + foe_sub() + ")"})
 		me_hp.max_value = pmax
 		me_hp.value = php
 		var ratio := float(php) / pmax
@@ -1709,6 +1824,7 @@ func update_word() -> void:
 	elif not show_sword:
 		sword.visible = false
 	btn_hint.disabled = busy or hint_move == moves
+	_sync_icons()
 	for col in grid:
 		for x in col:
 			if x:
@@ -2236,7 +2352,8 @@ func enemy_turn() -> void:
 
 func foe_defeated() -> void:
 	var old := foe_name() + " (" + foe_sub() + ")"
-	var was_last := chap == FOES.size() and not endless
+	var was_last := chap == FOES.size() * ROUNDS
+	var round_done := chap == FOES.size()
 	chap += 1
 	pmax += 20
 	php = min(pmax, php + 20)
@@ -2254,11 +2371,14 @@ func foe_defeated() -> void:
 			best = score
 			set_setting(best_key(), best)
 		show_dialog("Gesamtsieg!", t("finalB", {"o": old, "s": score, "n": found.size(), "m": pmax}) + "\n" + t("loot", {"i": loot}), [
-			[t("again"), func(): pick_mode(false), false],
-			[t("endless"), func(): self.endless = true; update_ui(); close_overlay(), true]])
+			[t("again"), func(): pick_mode(false), true]])
+		return
+	if round_done:
+		var st2 := foe_stats(chap)
+		show_dialog(str(t("round2T")), t("round2B", {"o": old, "m": pmax, "i": loot, "s": int(TURN_SECS), "n": foe_name(), "h": st2.hp, "a": st2.atk}), [[t("fight"), close_overlay, true]])
 		return
 	var st := foe_stats(chap)
-	show_dialog("Sieg!", t("winB", {"o": old, "c": chap, "m": pmax, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every, "i": loot}), [[t("fight"), close_overlay, true]])
+	show_dialog("Sieg!", t("winB", {"o": old, "c": stage_no(), "m": pmax, "n": foe_name(), "h": st.hp, "a": st.atk, "e": st.every, "i": loot}), [[t("fight"), close_overlay, true]])
 
 
 func next_chapter() -> void:
@@ -2281,7 +2401,7 @@ func check_over() -> void:
 	for f in found:
 		if top.is_empty() or f.pts > top.pts:
 			top = f
-	var where: String = t("reachedB", {"c": chap, "n": foe_name()}) if mode == "battle" else t("reachedC", {"c": chap})
+	var where: String = t("reachedB", {"c": stage_no(), "n": foe_name()}) if mode == "battle" else t("reachedC", {"c": chap})
 	var body: String = t("overB", {"s": score, "where": where, "n": found.size()})
 	if not top.is_empty():
 		body += "\n" + t("bestW", {"w": top.w.to_upper(), "p": top.pts})

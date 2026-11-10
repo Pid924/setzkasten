@@ -1,7 +1,7 @@
 extends Node3D
 ## A character built from primitive meshes. Feet sit at the origin, the body is about 2 units tall
 ## and the front faces +Z. kind: "me" for the typesetter hero, otherwise an enemy body
-## ("blob", "bug", "horns", "stripes", "square", "ghost", "crown", "dragon").
+## ("blob", "bug", "horns", "stripes", "square", "ghost", "crown", "dragon", "octo", "press").
 
 var kind := "me"
 var body_color := Color("3b3f6b")
@@ -282,6 +282,31 @@ func _build_enemy() -> void:
 			for i in 5:
 				add(cyl(0.0, 0.04, 0.1), white, Vector3(-0.2 + i * 0.1, 0.72, 0.72), Vector3(180, 0, 0))
 			_eyes(1.32, 0.66, 0.24, 0.13)
+		"octo":
+			# Walzenkrake: an ink-roller kraken with a printing roller as a hat
+			add(sphere(0.7), c, Vector3(0, 1.15, 0), Vector3.ZERO, Vector3(1, 1.15, 0.95), null, 0.3)
+			for i in 6:
+				var a := TAU * i / 6.0 + 0.3
+				var d := Vector3(cos(a), 0, sin(a))
+				add(capsule(0.12, 0.95), c.darkened(0.12), d * 0.5 + Vector3(0, 0.38, 0), Vector3(rad_to_deg(d.z) * -0.9, 0, rad_to_deg(d.x) * 0.9) * 0.6, Vector3.ONE, null, 0.3)
+				add(sphere(0.07), c.lightened(0.35), d * 0.62 + Vector3(0, 0.22, 0.1), Vector3.ZERO, Vector3.ONE, null, 0.3)
+			add(cyl(0.26, 0.26, 1.1), Color("1b1a1f"), Vector3(0, 1.98, 0), Vector3(0, 0, 90), Vector3.ONE, null, 0.25, 0.2)
+			for sx in [-0.6, 0.6]:
+				add(cyl(0.05, 0.05, 0.4), Color("c9a24a"), Vector3(sx, 1.82, 0), Vector3.ZERO, Vector3.ONE, null, 0.3, 0.9)
+			_eyes(1.25, 0.6, 0.24, 0.14)
+		"press":
+			# Eiserne Presse: an iron hand press with a screw and a turning bar
+			add(cube(1.5, 0.3, 1.0), c.darkened(0.25), Vector3(0, 0.15, 0), Vector3.ZERO, Vector3.ONE, null, 0.5, 0.7)
+			for sx in [-0.62, 0.62]:
+				add(cube(0.26, 1.7, 0.4), c, Vector3(sx, 1.1, 0), Vector3.ZERO, Vector3.ONE, null, 0.45, 0.75)
+			add(cube(1.5, 0.34, 0.5), c, Vector3(0, 2.0, 0), Vector3.ZERO, Vector3.ONE, null, 0.45, 0.75)
+			add(cube(1.0, 0.9, 0.7), c.lightened(0.12), Vector3(0, 1.05, 0.05), Vector3.ZERO, Vector3.ONE, null, 0.5, 0.6)
+			add(cyl(0.09, 0.09, 0.8), Color("c9a24a"), Vector3(0, 2.4, 0), Vector3.ZERO, Vector3.ONE, null, 0.3, 0.9)
+			add(cyl(0.04, 0.04, 1.4), Color("c9a24a"), Vector3(0, 2.62, 0), Vector3(0, 0, 90), Vector3.ONE, null, 0.3, 0.9)
+			for sx in [-0.7, 0.7]:
+				add(sphere(0.1), Color("b23a2b"), Vector3(sx, 2.62, 0), Vector3.ZERO, Vector3.ONE, null, 0.3)
+			add(cube(0.6, 0.08, 0.05), Color("111014"), Vector3(0, 0.82, 0.42))
+			_eyes(1.25, 0.42, 0.24, 0.13)
 		_:
 			# blob body (Tintenklecks, Druckfehlerteufel, Papiertiger, Zensor)
 			add(sphere(0.75), c, Vector3(0, 0.88, 0), Vector3.ZERO, Vector3(1.05, 1.1, 0.95), null, 0.25 if kind == "blob" else 0.6)

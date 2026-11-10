@@ -7,13 +7,15 @@ const Fighter3D := preload("res://scripts/fighter3d.gd")
 const Sfx := preload("res://scripts/sfx.gd")
 const ItemIcon := preload("res://scripts/item_icon.gd")
 const SwordBtn := preload("res://scripts/sword_btn.gd")
+## Hint word 1 / word 2 frame colours (a tile in both words shows both frames).
+const HINT_COLS := [Color("ff7a1a"), Color("b84dff")]
 const N_ITEMS := 10
 const SIZE3 := 1.35
 
 const COLS := 7
 const ROWS := 7
 const GAP := 6.0
-const HINT_HP := 3
+const HINT_HP := 5
 const HINT_PTS := 50
 const VAL := {"e": 1, "n": 1, "s": 1, "i": 1, "r": 1, "t": 1, "u": 1, "a": 1, "d": 1, "h": 2, "g": 2, "l": 2, "o": 2,
 	"m": 3, "b": 3, "w": 3, "z": 3, "c": 4, "f": 4, "k": 4, "p": 4, "ch": 4, "ss": 3, "ä": 6, "j": 6, "ü": 6, "v": 6, "ö": 8, "x": 8, "q": 10, "y": 10}
@@ -523,6 +525,7 @@ func _build_ui() -> void:
 	word_panel.add_theme_stylebox_override("panel", box(C_WOOD2, 8, C_EDGE, 1))
 	word_panel.custom_minimum_size.y = 66
 	left.add_child(word_panel)
+	left.move_child(word_panel, tray.get_index())
 	var wh := HBoxContainer.new()
 	word_panel.add_child(wh)
 	word_lbl = lbl("", 34, C_MUTED, f_sort)
@@ -1152,7 +1155,7 @@ func rand_letter() -> String:
 
 func mk_tile(l: String = "") -> Dictionary:
 	uid += 1
-	var x := {"id": uid, "l": l if l != "" else rand_letter(), "bonus": 0, "ink": 0, "heal": 0, "item": 0, "c": 0, "r": 0}
+	var x := {"id": uid, "l": l if l != "" else rand_letter(), "bonus": 0, "ink": 0, "heal": 0, "item": 0, "hint": 0, "c": 0, "r": 0}
 	var p := Panel.new()
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.pivot_offset = Vector2(ts / 2, ts / 2)
@@ -1180,6 +1183,20 @@ func mk_tile(l: String = "") -> Dictionary:
 	gem.visible = false
 	p.add_child(gem)
 	x.gem = gem
+	var rings := []
+	for k in 2:
+		var ring := Panel.new()
+		ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var rs := StyleBoxFlat.new()
+		rs.draw_center = false
+		rs.set_border_width_all(4)
+		rs.set_corner_radius_all(7 - k * 2)
+		rs.border_color = HINT_COLS[k]
+		ring.add_theme_stylebox_override("panel", rs)
+		ring.visible = false
+		p.add_child(ring)
+		rings.append(ring)
+	x.rings = rings
 	paint(x)
 	return x
 
@@ -1190,7 +1207,7 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 		st = styles.tile_ink
 	elif x.heal > 0:
 		st = styles.tile_heal
-	elif x.item > 0:
+	elif x.item > 0 or x.l in UMLAUTS:
 		st = styles.tile_item
 	elif x.bonus == 2:
 		st = styles.tile_red
@@ -1221,7 +1238,13 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 		badge = "×" + str(x.bonus)
 	x.badge.text = badge
 	var gs := ts * 0.15
-	x.gem.visible = x.item > 0 and x.ink == 0
+	x.gem.visible = (x.item > 0 or x.l in UMLAUTS) and x.ink == 0
+	for k in 2:
+		var ring: Panel = x.rings[k]
+		ring.visible = (x.hint & (1 << k)) != 0
+		var inset := -2.0 if k == 0 else 4.0
+		ring.position = Vector2(inset, inset)
+		ring.size = Vector2(ts - 2 * inset, ts - 2 * inset)
 	x.gem.size = Vector2(gs, gs)
 	x.gem.position = Vector2(ts * 0.16, ts * 0.07)
 	x.badge.add_theme_font_size_override("font_size", int(ts * 0.2))
@@ -1236,7 +1259,7 @@ func decorate(x: Dictionary) -> void:
 		x.heal = 6 + chap
 	elif r < 0.105:
 		x.bonus = 2
-	elif r < 0.14:
+	elif r < 0.14 and not x.l in UMLAUTS:
 		x.item = 1
 	else:
 		return
@@ -1540,6 +1563,7 @@ func use_item(i: int) -> void:
 ## Gives each tile a new random letter with a little flip, then makes sure a word exists.
 func _reletter(tiles: Array) -> void:
 	sfx.play("shuffle")
+	clear_hint_marks()
 	for x in tiles:
 		x.l = rand_letter()
 		var n: Control = x.node
@@ -1636,8 +1660,7 @@ func show_item_help() -> void:
 func gain_items(used: Array) -> void:
 	var got := []
 	for x in used:
-		var n := (1 if x.l in UMLAUTS else 0) + (1 if x.item else 0)
-		for j in n:
+		if x.l in UMLAUTS or x.item:
 			var k := randi() % N_ITEMS
 			inv[k] += 1
 			got.append(item_name(k))
@@ -1798,6 +1821,14 @@ func stop_hint() -> void:
 	hint_tweens.clear()
 
 
+func clear_hint_marks() -> void:
+	for col in grid:
+		for x in col:
+			if x and x.hint:
+				x.hint = 0
+				paint(x, x in sel)
+
+
 func _pay_hint() -> void:
 	if mode == "battle":
 		php = max(1, php - HINT_HP)
@@ -1821,20 +1852,85 @@ func _wiggle(tiles: Array) -> void:
 
 
 func _do_hint() -> void:
-	var path := find_word(5)
-	if path.is_empty():
+	var pair := find_hint_pair()
+	if pair.is_empty():
 		toast(t("noWords"))
 		shuffle(false)
 		return
 	_pay_hint()
-	hint_path = path
 	hint_move = moves
-	sel = [path[0]]
+	hint_path = pair[0]
+	clear_hint_marks()
+	var shared := 0
+	var all := []
+	for k in pair.size():
+		for x in pair[k]:
+			if x.hint:
+				shared += 1
+			x.hint |= 1 << k
+			if not x in all:
+				all.append(x)
+	sel = []
 	update_word()
 	update_ui()
-	_wiggle(path.slice(1))
+	_wiggle(all)
 	sfx.play("hint")
-	toast(t("hintToast", {"l": path[0].l.to_upper(), "n": path.size()}))
+	if pair.size() == 1:
+		toast(t("hintOne", {"a": pair[0].size()}))
+	else:
+		toast(t("hintTwo", {"a": pair[0].size(), "b": pair[1].size()}) + ((" " + str(t("hintShared"))) if shared > 0 else ""))
+
+
+## Two words to hint at, preferring long ones whose tiles don't overlap.
+func find_hint_pair() -> Array:
+	var found_paths := {}
+	for col in grid:
+		for x in col:
+			if x:
+				_collect(x, "", [], {}, found_paths)
+	var cands: Array = found_paths.values()
+	if cands.is_empty():
+		return []
+	cands.sort_custom(func(p, q): return p.size() > q.size())
+	var top: Array = cands.slice(0, min(6, cands.size()))
+	var a: Array = top.pick_random()
+	var best := []
+	var best_ov := 99
+	for q in cands:
+		if q == a or word_of(q) == word_of(a):
+			continue
+		var ov := 0
+		for x in q:
+			if x in a:
+				ov += 1
+		if ov < best_ov:
+			best_ov = ov
+			best = q
+			if ov == 0:
+				break
+	return [a] if best.is_empty() else [a, best]
+
+
+func _collect(x: Dictionary, pre: String, path: Array, seen: Dictionary, out: Dictionary) -> void:
+	var w: String = pre + x.l
+	if not has_prefix(w):
+		return
+	path.append(x)
+	seen[x.id] = true
+	if w.length() >= 3 and word_set.has(w) and not out.has(w):
+		out[w] = path.duplicate()
+	if path.size() < 8:
+		for dc in [-1, 0, 1]:
+			for dr in [-1, 0, 1]:
+				var c: int = x.c + dc
+				var r: int = x.r + dr
+				if c < 0 or r < 0 or c >= COLS or r >= ROWS:
+					continue
+				var u = grid[c][r]
+				if u and not seen.has(u.id):
+					_collect(u, w, path, seen, out)
+	path.pop_back()
+	seen.erase(x.id)
 
 
 func _on_shuffle() -> void:
@@ -1851,6 +1947,7 @@ func shuffle(costs_turn: bool) -> void:
 		return
 	busy = true
 	stop_hint()
+	clear_hint_marks()
 	sfx.play("shuffle")
 	var all := []
 	for col in grid:
@@ -1988,6 +2085,7 @@ func submit() -> void:
 		return
 	busy = true
 	sword.visible = false
+	clear_hint_marks()
 	var pts := calc(sel)
 	stop_hint()
 	var used := sel.duplicate()

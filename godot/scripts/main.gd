@@ -51,6 +51,7 @@ var f_display: FontVariation
 var words := PackedStringArray()
 var word_set := {}
 var gloss := {}
+var alias := {}
 
 # settings
 var cfg := ConfigFile.new()
@@ -265,6 +266,16 @@ func _load_dictionary() -> void:
 		word_set[w] = true
 	var g := FileAccess.open("res://data/gloss.json", FileAccess.READ)
 	gloss = JSON.parse_string(g.get_as_text())
+	var a := FileAccess.open("res://data/alias.json", FileAccess.READ)
+	alias = JSON.parse_string(a.get_as_text())
+
+
+## Gloss entry for a word; inflected forms added from the big word list borrow their base word's entry.
+func gloss_of(w: String) -> Variant:
+	var g = gloss.get(w)
+	if g == null and alias.has(w):
+		g = gloss.get(alias[w])
+	return g
 
 
 func is_word(w: String) -> bool:
@@ -2687,7 +2698,7 @@ func norm(s: String) -> String:
 
 
 func tr_of(w: String) -> Dictionary:
-	var g = gloss.get(w)
+	var g = gloss_of(w)
 	if g and g[I18n.GLOSS_INDEX[lang]] != "":
 		return {"text": g[I18n.GLOSS_INDEX[lang]], "user": false}
 	var u: String = cfg.get_value("usertr", lang + "|" + w, "")
@@ -2697,7 +2708,7 @@ func tr_of(w: String) -> Dictionary:
 
 
 func de_bbcode(w: String) -> Dictionary:
-	var g = gloss.get(w)
+	var g = gloss_of(w)
 	if not g:
 		return {"de": w.to_upper(), "form": ""}
 	var parts := []

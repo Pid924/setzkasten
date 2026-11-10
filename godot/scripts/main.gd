@@ -6,6 +6,7 @@ const Fighter := preload("res://scripts/fighter.gd")
 const Fighter3D := preload("res://scripts/fighter3d.gd")
 const Sfx := preload("res://scripts/sfx.gd")
 const ItemIcon := preload("res://scripts/item_icon.gd")
+const SwordBtn := preload("res://scripts/sword_btn.gd")
 const N_ITEMS := 10
 const SIZE3 := 1.35
 
@@ -148,6 +149,7 @@ var word_lbl: Label
 var pts_lbl: Label
 var word_panel: PanelContainer
 var btn_submit: Button
+var sword: Button
 var btn_clear: Button
 var btn_hint: Button
 var btn_shuffle: Button
@@ -325,6 +327,7 @@ func _build_styles() -> void:
 	styles.tile_red = _tile_style(Color("d98472"), Color("8e3e2e"))
 	styles.tile_gold = _tile_style(Color("f2cf63"), Color("98741c"))
 	styles.tile_heal = _tile_style(Color("a9cf8f"), Color("4f7a3b"))
+	styles.tile_item = _tile_style(Color("8fb4e3"), Color("2f5a8e"))
 	styles.tile_ink = _tile_style(Color("2c2a33"), Color("000000"))
 	var th := Theme.new()
 	th.default_font = f_body
@@ -645,6 +648,12 @@ func _build_stage() -> void:
 		hp.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(hp)
 		return [v, name, bar, hp]
+	sword = SwordBtn.new()
+	sword.font = f_bold
+	sword.visible = false
+	sword.pressed.connect(submit)
+	sword.z_index = 6
+	stage.add_child(sword)
 	var a: Array = mk_info.call(true)
 	me_info = a[0]
 	me_name_lbl = a[1]
@@ -1121,6 +1130,7 @@ func _position_stage() -> void:
 	foe_info.position = Vector2(w * 0.77 - iw / 2, 8)
 	foe_info.custom_minimum_size.x = iw
 	foe_info.size = Vector2(iw, 0)
+	sword.position = Vector2(w / 2 - sword.size.x / 2, sh - sword.size.y - 34)
 
 
 # ---------------- tiles ----------------
@@ -1142,7 +1152,7 @@ func rand_letter() -> String:
 
 func mk_tile(l: String = "") -> Dictionary:
 	uid += 1
-	var x := {"id": uid, "l": l if l != "" else rand_letter(), "bonus": 0, "ink": 0, "heal": 0, "c": 0, "r": 0}
+	var x := {"id": uid, "l": l if l != "" else rand_letter(), "bonus": 0, "ink": 0, "heal": 0, "item": 0, "c": 0, "r": 0}
 	var p := Panel.new()
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.pivot_offset = Vector2(ts / 2, ts / 2)
@@ -1163,6 +1173,13 @@ func mk_tile(l: String = "") -> Dictionary:
 	x.letter = letter
 	x.val = val
 	x.badge = badge
+	var gem := Panel.new()
+	gem.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	gem.add_theme_stylebox_override("panel", box(Color("1f4e8c"), 2, Color("e6f0ff"), 2))
+	gem.rotation = PI / 4
+	gem.visible = false
+	p.add_child(gem)
+	x.gem = gem
 	paint(x)
 	return x
 
@@ -1173,6 +1190,8 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 		st = styles.tile_ink
 	elif x.heal > 0:
 		st = styles.tile_heal
+	elif x.item > 0:
+		st = styles.tile_item
 	elif x.bonus == 2:
 		st = styles.tile_red
 	elif x.bonus == 3:
@@ -1201,18 +1220,24 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 	elif x.bonus > 0:
 		badge = "×" + str(x.bonus)
 	x.badge.text = badge
+	var gs := ts * 0.15
+	x.gem.visible = x.item > 0 and x.ink == 0
+	x.gem.size = Vector2(gs, gs)
+	x.gem.position = Vector2(ts * 0.16, ts * 0.07)
 	x.badge.add_theme_font_size_override("font_size", int(ts * 0.2))
 	x.badge.add_theme_color_override("font_color", bcol)
 
 
 func decorate(x: Dictionary) -> void:
-	if mode != "battle" or x.bonus or x.heal:
+	if mode != "battle" or x.bonus or x.heal or x.item:
 		return
 	var r := randf()
 	if r < 0.07:
 		x.heal = 6 + chap
 	elif r < 0.105:
 		x.bonus = 2
+	elif r < 0.14:
+		x.item = 1
 	else:
 		return
 	paint(x)
@@ -1258,6 +1283,7 @@ func new_game(m: String) -> void:
 	lives = 3
 	found = []
 	moves = 0
+	hint_move = -1
 	busy = false
 	php = 100
 	pmax = 100
@@ -1367,6 +1393,7 @@ func update_ui() -> void:
 	stat_best.text = str(max(best, score))
 	stat_lives.text = str(lives) + " / 3"
 	btn_hint.text = t("hint") + (" −%d HP" % HINT_HP if mode == "battle" else " −%d" % HINT_PTS)
+	btn_hint.disabled = busy or hint_move == moves
 	prog.max_value = target()
 	prog.value = min(chap_score, target())
 	if mode == "battle" and not foe.is_empty():
@@ -1467,7 +1494,7 @@ func use_item(i: int) -> void:
 			var plain := []
 			for col in grid:
 				for x in col:
-					if not x.bonus and not x.heal and not x.ink:
+					if not x.bonus and not x.heal and not x.item and not x.ink:
 						plain.append(x)
 			_reletter(plain)
 		3:
@@ -1482,7 +1509,7 @@ func use_item(i: int) -> void:
 			var plain := []
 			for col in grid:
 				for x in col:
-					if not x.bonus and not x.heal and not x.ink:
+					if not x.bonus and not x.heal and not x.item and not x.ink:
 						plain.append(x)
 			if plain.is_empty():
 				ok = false
@@ -1609,7 +1636,8 @@ func show_item_help() -> void:
 func gain_items(used: Array) -> void:
 	var got := []
 	for x in used:
-		if x.l in UMLAUTS:
+		var n := (1 if x.l in UMLAUTS else 0) + (1 if x.item else 0)
+		for j in n:
 			var k := randi() % N_ITEMS
 			inv[k] += 1
 			got.append(item_name(k))
@@ -1647,6 +1675,17 @@ func update_word() -> void:
 	else:
 		pts_lbl.text = t("notword") if w.length() >= 3 else ""
 	btn_submit.disabled = not ok or busy
+	var show_sword := ok and mode == "battle" and not busy
+	if show_sword:
+		sword.label = pts_lbl.text.split("  ")[0]
+		sword.queue_redraw()
+	if show_sword and not sword.visible:
+		sword.visible = true
+		sword.modulate.a = 0.0
+		create_tween().tween_property(sword, "modulate:a", 1.0, 0.15)
+	elif not show_sword:
+		sword.visible = false
+	btn_hint.disabled = busy or hint_move == moves
 	for col in grid:
 		for x in col:
 			if x:
@@ -1737,14 +1776,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 func _on_hint() -> void:
 	if busy:
 		return
-	if _hint_active():
-		if mode == "battle" and php <= HINT_HP:
-			toast(t("hintLow"))
-			return
-		if mode != "battle" and score < HINT_PTS:
-			toast(t("hintPts"))
-			return
-		_hint_pick()
+	if hint_move == moves:
+		toast(t("hintOnce"))
 		return
 	if mode == "battle" and php <= HINT_HP:
 		toast(t("hintLow"))
@@ -1763,16 +1796,6 @@ func stop_hint() -> void:
 		if is_instance_valid(pair[1]):
 			pair[1].rotation = 0.0
 	hint_tweens.clear()
-
-
-## True while the last hint's word is still on the board and no turn has passed since.
-func _hint_active() -> bool:
-	if hint_path.is_empty() or hint_move != moves:
-		return false
-	for x in hint_path:
-		if grid[x.c][x.r] != x:
-			return false
-	return true
 
 
 func _pay_hint() -> void:
@@ -1797,22 +1820,6 @@ func _wiggle(tiles: Array) -> void:
 		hint_tweens.append([tw, n])
 
 
-## Second and later hints in the same turn: select the next letter of the hinted word.
-func _hint_pick() -> void:
-	var k := 0
-	while k < sel.size() and k < hint_path.size() and sel[k] == hint_path[k]:
-		k += 1
-	if k >= hint_path.size():
-		return
-	_pay_hint()
-	sel = hint_path.slice(0, k + 1)
-	update_word()
-	update_ui()
-	_wiggle(hint_path.slice(k + 1))
-	sfx.play("hint", 1.25)
-	toast(t("hintAuto", {"l": hint_path[k].l.to_upper(), "n": hint_path.size() - k - 1}))
-
-
 func _do_hint() -> void:
 	var path := find_word(5)
 	if path.is_empty():
@@ -1820,12 +1827,12 @@ func _do_hint() -> void:
 		shuffle(false)
 		return
 	_pay_hint()
-	sel = []
-	update_word()
-	update_ui()
-	_wiggle(path)
 	hint_path = path
 	hint_move = moves
+	sel = [path[0]]
+	update_word()
+	update_ui()
+	_wiggle(path.slice(1))
 	sfx.play("hint")
 	toast(t("hintToast", {"l": path[0].l.to_upper(), "n": path.size()}))
 
@@ -1885,12 +1892,12 @@ func ensure_playable() -> void:
 		var pool_tiles := []
 		var dead := dead_tiles() if n > 0 else []
 		for x in dead:
-			if not x.ink and not x.bonus and not x.heal and not x in sel:
+			if not x.ink and not x.bonus and not x.heal and not x.item and not x in sel:
 				pool_tiles.append(x)
 		if pool_tiles.size() < 4:
 			for col in grid:
 				for x in col:
-					if not x.ink and not x.bonus and not x.heal and not x in sel and not x in pool_tiles:
+					if not x.ink and not x.bonus and not x.heal and not x.item and not x in sel and not x in pool_tiles:
 						pool_tiles.append(x)
 		pool_tiles.shuffle()
 		for x in pool_tiles.slice(0, 6):
@@ -1980,6 +1987,7 @@ func submit() -> void:
 			sfx.play("bad")
 		return
 	busy = true
+	sword.visible = false
 	var pts := calc(sel)
 	stop_hint()
 	var used := sel.duplicate()

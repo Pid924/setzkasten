@@ -575,6 +575,9 @@ func _build_ui() -> void:
 	item_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	item_info.visible = false
 	left.add_child(item_info)
+	# items sit right under the battle stage, above the word bar
+	left.move_child(item_row, word_panel.get_index())
+	left.move_child(item_info, word_panel.get_index())
 	var brow := HBoxContainer.new()
 	brow.add_theme_constant_override("separation", 8)
 	left.add_child(brow)
@@ -1335,7 +1338,7 @@ func paint(x: Dictionary, selected: bool = false) -> void:
 		ring.position = Vector2(inset, inset)
 		ring.size = Vector2(ts - 2 * inset, ts - 2 * inset)
 	x.gem.size = Vector2(gs, gs)
-	x.gem.position = Vector2(ts * 0.16, ts * 0.07)
+	x.gem.position = Vector2(ts * (0.84 if badge != "" else 0.16), ts * 0.07)
 	x.badge.add_theme_font_size_override("font_size", int(ts * 0.2))
 	x.badge.add_theme_color_override("font_color", bcol)
 

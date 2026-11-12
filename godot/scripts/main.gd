@@ -217,9 +217,15 @@ func _ready() -> void:
 		await get_tree().create_timer(1.0).timeout
 		if str(JavaScriptBridge.eval("location.search")).contains("slow"):
 			Engine.time_scale = 0.12
-		for wd in ["HAUS", "GARTEN", "SETZKASTEN"]:
-			await player_attack(wd, 5, false, 0)
-			await get_tree().create_timer(0.6).timeout
+		var demo_from := 0
+		if str(JavaScriptBridge.eval("location.search")).contains("vslow"):
+			Engine.time_scale = 0.03
+			demo_from = 3
+		var demo := [["HAUS", 12], ["GARTEN", 30], ["DRUCKER", 50], ["SCHRIFT", 70], ["BUCHDRUCK", 90], ["SETZKASTEN", 130]]
+		for k in range(demo_from, demo.size()):
+			await player_attack(demo[k][0], demo[k][1], false, 0)
+			JavaScriptBridge.eval("window.__fx%d=1" % k)
+			await get_tree().create_timer(0.8).timeout
 		foe.atk = 20
 		await enemy_attack()
 	if OS.has_feature("web") and str(JavaScriptBridge.eval("location.search")).contains("gallery"):
@@ -2580,16 +2586,141 @@ func shockwave(at: Vector3, col: Color) -> void:
 	tw.chain().tween_callback(r.queue_free)
 
 
-## Attack strength: 0 light (flying sorts), 1 medium (+ composing stick), 2 heavy (+ giant falling sort).
-func attack_tier(word: String, crit: bool) -> int:
-	var n := word.length()
-	var tier := 0 if n <= 4 else (1 if n <= 6 else 2)
-	return min(2, tier + (1 if crit else 0))
+## Attack strength by damage: 0 = 1-20 (flying sorts), 1 = 21-40 (+ composing stick), 2 = 41-60 (+ giant sort),
+## 3 = 61-80 (lead hail), 4 = 81-100 (press slam), 5 = over 100 (lightning strike).
+func attack_tier(dmg: int) -> int:
+	return clamp(int((dmg - 1) / 20), 0, 5)
+
+
+## Fades a colour over the whole battle stage and back out (dimming before a big hit, white-out on impact).
+func stage_tint(col: Color, alpha: float, t_in: float, hold: float, t_out: float) -> void:
+	var r := ColorRect.new()
+	r.color = Color(col, 0.0)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	r.set_anchors_preset(Control.PRESET_FULL_RECT)
+	r.z_index = 4
+	stage.add_child(r)
+	var tw := create_tween()
+	tw.tween_property(r, "color:a", alpha, t_in)
+	tw.tween_interval(hold)
+	tw.tween_property(r, "color:a", 0.0, t_out)
+	tw.tween_callback(r.queue_free)
+
+
+## Tier 3: a hail of lead sorts rains down on the enemy.
+func _hail(letters: Array, crit: bool) -> void:
+	sfx.play("hail")
+	var last: Tween
+	for j in 12:
+		var s := sort3d(letters[j % letters.size()], crit)
+		s.scale = Vector3(1.5, 1.5, 1.5)
+		var gm: StandardMaterial3D = s.material_override
+		gm.emission_energy_multiplier = 1.6
+		s.visible = false
+		fx3.add_child(s)
+		var land := foe3.position + Vector3(randf_range(-0.9, 0.9), randf_range(0.4, 1.5) * foe3.scale.y, randf_range(0.4, 0.9))
+		var top := land + Vector3(randf_range(-2.2, -1.0), 4.2, 0)
+		var spin := Vector3(randf_range(1, 3), randf_range(1, 3), randf_range(-2, 2)) * TAU
+		var tw := create_tween()
+		tw.tween_interval(j * 0.06)
+		tw.tween_callback(func(): s.visible = true)
+		tw.tween_method(func(k: float): s.position = top.lerp(land, k); s.rotation = spin * k, 0.0, 1.0, 0.36).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_callback(func():
+			s.queue_free()
+			burst(land, [Color("fff3d6"), Color("ffd27a"), Color("c9a24a")], 8)
+			flash(land + Vector3(0, 0, 0.4), Color("ffd27a"), 1.5)
+			foe3.hurt(1.0, 0.3)
+			cam_shake(3.0))
+		last = tw
+	await last.finished
+
+
+## Tier 4: the platen of a printing press slams down on the enemy.
+func _press_slam() -> void:
+	var n := Node3D.new()
+	var iron := mat3(Color("3c4148"), 0.35, 0.85)
+	var brass := mat3(Color("d9b04f"), 0.25, 0.9)
+	mesh3(boxm(2.3, 0.8, 1.7), iron, Vector3(0, 0.2, 0), n)
+	mesh3(boxm(2.45, 0.12, 1.85), brass, Vector3(0, -0.25, 0), n)
+	var screw := CylinderMesh.new()
+	screw.top_radius = 0.16
+	screw.bottom_radius = 0.16
+	screw.height = 6.0
+	mesh3(screw, brass, Vector3(0, 3.2, 0), n)
+	fx3.add_child(n)
+	var land := foe3.position + Vector3(0, 1.75 * foe3.scale.y, 0.2)
+	n.position = land + Vector3(0, 6.0, 0)
+	sfx.play("drop", 0.7)
+	var tw := create_tween()
+	tw.tween_property(n, "position", land, 0.34).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	await tw.finished
+	sfx.play("slam")
+	shockwave(foe3.position, Color(1.0, 0.85, 0.5, 0.9))
+	get_tree().create_timer(0.14).timeout.connect(func(): shockwave(foe3.position, Color(1.0, 0.6, 0.3, 0.7)))
+	burst(Vector3(foe3.position.x, 0.2, foe3.position.z + 0.3), [Color("d8c49a"), Color("8a6a4c"), Color("3a2a1f")], 60)
+	stage_tint(Color.WHITE, 0.35, 0.03, 0.02, 0.25)
+	# press down a little further, then lift away
+	var out := create_tween()
+	out.tween_property(n, "position:y", land.y - 0.35 * foe3.scale.y, 0.07)
+	out.tween_interval(0.16)
+	out.tween_property(n, "position:y", land.y + 7.0, 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	out.tween_callback(n.queue_free)
+	await get_tree().create_timer(0.1).timeout
+
+
+## Tier 5: the shop goes dark and a bolt of molten type strikes the enemy.
+func _lightning(letter: String, crit: bool) -> void:
+	stage_tint(Color.BLACK, 0.55, 0.25, 0.75, 0.5)
+	sfx.play("charge")
+	# glowing sorts circle above the enemy while the strike charges
+	var ring := Node3D.new()
+	ring.position = foe3.position + Vector3(0, 1.9 * foe3.scale.y, 0.3)
+	fx3.add_child(ring)
+	for j in 6:
+		var s := sort3d(letter, true)
+		s.scale = Vector3(0.7, 0.7, 0.7)
+		var a := TAU * j / 6.0
+		s.position = Vector3(cos(a) * 1.1, 0, sin(a) * 1.1)
+		ring.add_child(s)
+	var ct := create_tween().set_parallel()
+	ct.tween_property(ring, "rotation:y", TAU * 2.0, 0.6).set_ease(Tween.EASE_IN)
+	ct.tween_property(ring, "scale", Vector3(0.15, 0.15, 0.15), 0.6).set_ease(Tween.EASE_IN)
+	await ct.finished
+	ring.queue_free()
+	sfx.play("thunder")
+	var bm := CylinderMesh.new()
+	bm.top_radius = 0.55
+	bm.bottom_radius = 0.4
+	bm.height = 9.0
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_color = Color(1.0, 0.85, 0.45, 0.95)
+	var beam := mesh3(bm, m, foe3.position + Vector3(0, 4.5, 0.2), fx3, Vector3.ZERO, false)
+	var core_m: StandardMaterial3D = m.duplicate()
+	core_m.albedo_color = Color(1, 1, 1, 1)
+	var core := mesh3(bm, core_m, Vector3.ZERO, beam, Vector3.ZERO, false)
+	core.scale = Vector3(0.45, 1.0, 0.45)
+	beam.scale = Vector3(0.2, 1.0, 0.2)
+	var bt := create_tween()
+	bt.tween_property(beam, "scale", Vector3(1.5, 1.0, 1.5), 0.07)
+	bt.tween_property(beam, "scale", Vector3(0.7, 1.0, 0.7), 0.1)
+	bt.tween_property(beam, "scale", Vector3(1.2, 1.0, 1.2), 0.07)
+	bt.tween_property(beam, "scale", Vector3(0.0, 1.0, 0.0), 0.22)
+	bt.tween_callback(beam.queue_free)
+	stage_tint(Color("fff3d6"), 0.75, 0.03, 0.05, 0.4)
+	flash(foe3.position + Vector3(0, 1.2, 0.8), Color("ffe6a0"), 12.0)
+	for k in 3:
+		get_tree().create_timer(k * 0.13).timeout.connect(func(): shockwave(foe3.position, Color(1.0, 0.8 - k * 0.15, 0.35, 0.9)))
+	burst(foe3.position + Vector3(0, 0.3, 0.3), [Color.WHITE, Color("ffd27a"), Color("ff7a2a")], 80)
+	burst(foe3.position + Vector3(0, 1.4 * foe3.scale.y, 0.3), [Color.WHITE, Color("9fd8ff"), Color("5a8cff")], 50, 1.0, true)
+	await get_tree().create_timer(0.12).timeout
 
 
 func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 	var sc := me3.scale.y
-	var tier := attack_tier(word, crit)
+	var tier := attack_tier(dmg)
 	if heal > 0:
 		sfx.play("heal")
 		burst(me3.position + Vector3(0, 0.6 * sc, 0.2), [Color("e9f7d9"), Color("a8e08a"), Color("6fbf4f")], 24, 1.0, true)
@@ -2600,12 +2731,12 @@ func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 	var home := me_node.position
 	var lunge := create_tween()
 	lunge.tween_interval(0.12)
-	lunge.tween_property(me_node, "position", home + Vector2(24 + tier * 10, -6), 0.12)
+	lunge.tween_property(me_node, "position", home + Vector2(24 + min(tier, 3) * 10, -6), 0.12)
 	lunge.tween_property(me_node, "rotation", 0.12, 0.08)
 	lunge.tween_property(me_node, "position", home, 0.2)
 	lunge.parallel().tween_property(me_node, "rotation", 0.0, 0.2)
 	lunge.tween_callback(func(): me_node.start_idle(1.2))
-	sfx.play("throw", 1.0 + 0.1 * (2 - tier))
+	sfx.play("throw", 1.2 - 0.06 * tier)
 	var letters := []
 	var i := 0
 	var up := word.to_upper()
@@ -2648,23 +2779,32 @@ func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 		last_tw = st
 	if last_tw:
 		await last_tw.finished
+	var first: String = letters[0] if letters.size() > 0 else "A"
 	if tier == 2:
-		await _giant_sort(letters[0] if letters.size() > 0 else "A", crit)
+		await _giant_sort(first, crit)
+	elif tier == 3:
+		await _hail(letters if letters.size() > 0 else ["A"], crit)
+	elif tier == 4:
+		await _press_slam()
+	elif tier == 5:
+		await _lightning(first, crit)
+		await _giant_sort(first, true)
 	var impact := foe3.position + Vector3(0, 1.0 * foe3.scale.y, 0.35)
 	var cols_fx := [Color.WHITE, Color("ffb35a"), Color("e3742f")] if crit else [Color("f3ecdc"), Color("ffd27a"), Color("c9a24a")]
-	sfx.play(["hit_l", "hit_m", "hit_h"][tier])
-	if crit:
+	sfx.play(["hit_l", "hit_m", "hit_h", "hit_h", "hit_h", "hit_h"][tier], [1.0, 1.0, 1.0, 1.15, 0.85, 0.7][tier])
+	if crit or tier == 5:
 		sfx.play("ring")
-	sfx.play("grunt", 0.8 if tier == 2 else 1.0, -2.0)
-	burst(impact, cols_fx, [22, 34, 60][tier] + (12 if crit else 0))
-	flash(impact + Vector3(0, 0, 0.6), Color("ffb35a") if crit else Color("ffe0a0"), [2.0, 3.0, 5.0][tier])
-	float_text(pt2(foe3, 2.1), "−" + str(dmg), Color("ffb35a") if crit else Color("ffd27a"), [34, 42, 52][tier])
-	foe3.hurt(1.0, [0.6, 1.0, 1.5][tier])
+	sfx.play("grunt", 0.8 if tier >= 2 else 1.0, -2.0)
+	burst(impact, cols_fx, [22, 34, 60, 50, 70, 90][tier] + (12 if crit else 0))
+	flash(impact + Vector3(0, 0, 0.6), Color("ffb35a") if crit else Color("ffe0a0"), [2.0, 3.0, 5.0, 5.0, 7.0, 9.0][tier])
+	var dcol: Color = [Color("ffd27a"), Color("ffd27a"), Color("ffc45a"), Color("ffa040"), Color("ff7a3a"), Color("ff5a5a")][tier]
+	float_text(pt2(foe3, 2.1), "−" + str(dmg), Color("ffb35a") if crit and tier < 3 else dcol, [34, 40, 46, 52, 58, 68][tier])
+	foe3.hurt(1.0, [0.6, 1.0, 1.5, 1.5, 1.9, 2.3][tier])
 	var fh := create_tween()
 	fh.tween_property(foe_node, "modulate", Color(1, 0.35, 0.35), 0.06)
 	fh.tween_property(foe_node, "modulate", Color.WHITE, 0.25)
-	shake(foe_node, [6.0, 10.0, 16.0][tier])
-	cam_shake([4.0, 8.0, 16.0][tier] + (4.0 if crit else 0.0))
+	shake(foe_node, [6.0, 10.0, 16.0, 16.0, 20.0, 24.0][tier])
+	cam_shake([4.0, 8.0, 16.0, 14.0, 22.0, 28.0][tier] + (4.0 if crit else 0.0))
 	if stick:
 		# the composing stick bounces back to the typesetter's hand
 		var back := me3.position + Vector3(0.6 * sc, 1.1 * sc, 0.5)
@@ -2672,7 +2812,7 @@ func player_attack(word: String, dmg: int, crit: bool, heal: int) -> void:
 		var bt := create_tween()
 		bt.tween_method(func(k: float): stick.position = bezier(from, (from + back) / 2 + Vector3(0, 1.0, 1.2), back, k); stick.rotation = Vector3(0.4, -k * TAU * 2.0, 0.2), 0.0, 1.0, 0.4)
 		bt.tween_callback(stick.queue_free)
-	await get_tree().create_timer(0.3 + 0.1 * tier).timeout
+	await get_tree().create_timer(0.3 + 0.1 * min(tier, 3)).timeout
 
 
 ## Heavy hit: an oversized lead sort drops from above onto the enemy.

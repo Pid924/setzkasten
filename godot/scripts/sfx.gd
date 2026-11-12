@@ -196,3 +196,40 @@ func _make_all() -> void:
 	b = _buf(0.25)
 	_noise(b, 0, 0.2, 0.5, 20, 0.15, 0.6, 0.08)
 	sounds.throw = _wav(b)
+
+	# tier 3: a rattle of small lead pieces
+	b = _buf(0.85)
+	for i in 14:
+		var at2 := i * 0.05 + _rng.randf_range(0, 0.02)
+		_noise(b, at2, 0.04, 0.55, 90, 0.8, 0.5)
+		_tone(b, at2, 0.07, _rng.randf_range(1500, 2600), 1200, 0.3, 45)
+		_tone(b, at2, 0.08, 220, 120, 0.3, 35)
+	sounds.hail = _wav(b)
+
+	# tier 4: an iron press slamming shut
+	b = _buf(1.2)
+	_tone(b, 0, 1.2, 70, 28, 1.0, 3.5)
+	_noise(b, 0, 0.5, 1.0, 9, 0.5, 0.04)
+	for f in [311.0, 466.0, 733.0, 1108.0]:
+		_tone(b, 0, 1.0, f, f * 0.99, 0.22, 5, 0.002, "tri")
+	_noise(b, 0, 0.03, 0.9, 80, 0.95, 0.6)
+	for i in b.size():
+		b[i] = tanh(b[i] * 2.0)
+	sounds.slam = _wav(b)
+
+	# tier 5: rising charge, then a thunder crack with a long rumble
+	b = _buf(0.65)
+	_tone(b, 0, 0.65, 220, 1500, 0.4, -2.5, 0.2)
+	_tone(b, 0, 0.65, 330, 2250, 0.25, -2.5, 0.2)
+	_noise(b, 0, 0.65, 0.3, -2.0, 0.1, 0.7, 0.3)
+	sounds.charge = _wav(b)
+
+	b = _buf(1.9)
+	_noise(b, 0, 0.12, 1.2, 25, 1.0, 0.7, 0.001)
+	_noise(b, 0.02, 1.85, 1.0, 2.2, 0.3, 0.015)
+	_tone(b, 0, 1.6, 60, 24, 1.0, 2.5)
+	_tone(b, 0, 0.3, 900, 120, 0.5, 14)
+	for i in b.size():
+		var tt := float(i) / SR
+		b[i] = tanh(b[i] * 2.2 * (1.0 + 0.3 * sin(tt * 37.0)))
+	sounds.thunder = _wav(b)
